@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rightton"
+version = "0.1.0"
+description = "Residential heating and cooling design-load calculator (calculation core)"
+requires-python = ">=3.10"
+license = { text = "MIT (with BSD-licensed ported portions; see NOTICE-OpenStudio-HPXML.md)" }
+dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.setuptools.packages.find]
+include = ["rightton*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
