@@ -195,6 +195,9 @@ INFIL_WIND_COEFF_PER_SHIELD_CLASS = 0.00266
 INFIL_WIND_STORY_EXPONENT = 0.4
 INFIL_WINDSPEED_COOLING_MPH = 7.5
 INFIL_WINDSPEED_HEATING_MPH = 15.0
+# origin: MJ8 Figure A15-1 (wind speed profile exponent by site shielding)
+# via: process_load_infiltration_ventilation (a_exponent)
+WIND_HEIGHT_EXPONENT = {"normal": 0.22, "exposed": 0.14, "well_shielded": 0.33}
 FIREPLACE_HEATING_CFM = 20.0  # origin: OS-HPXML assumption, 1 fireplace of average leakiness
 
 # origin: MJ8 Table 5A (default air changes per hour, single-family detached)

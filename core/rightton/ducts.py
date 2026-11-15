@@ -129,6 +129,8 @@ def duct_regain_factor(bldg, location: str) -> float:
     if bldg.is_room(location):
         return 1.0
     space = bldg.buffer(location)
+    if space.kind == "weighted":
+        return space.duct_regain
     if space.kind in ("attic_vented", "attic_unvented"):
         return T.DUCT_REGAIN_ATTIC
     if space.kind == "garage":

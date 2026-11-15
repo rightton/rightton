@@ -152,6 +152,17 @@ def insulated_unvented_attic_cooling_temp(ua: dict[str, float], cooling_setpoint
     return max_temp - frac_conditioned * (max_temp - min_temp)
 
 
+def weighted_temperature(space: BufferSpace, setpoint_f: float, outdoor_f: float, ground_f: float) -> float:
+    """Design temperature of a space defined by fixed weights.
+
+    Source: calculate_scheduled_space_design_temps.
+    """
+    temp = setpoint_f * space.indoor_weight + outdoor_f * space.outdoor_weight + ground_f * space.ground_weight
+    if space.min_temp_f is not None:
+        temp = max(temp, space.min_temp_f)
+    return temp
+
+
 def garage_fraction_under_conditioned(bldg: Building, space: BufferSpace) -> float:
     """Source: get_garage_frac_under_conditioned."""
     total = sum(r.area_ft2 for r in bldg.roofs if r.inside == space.id)
@@ -185,6 +196,8 @@ def heating_design_temp(bldg: Building, space: BufferSpace, outside_air_density:
         return balance_temperature(space_ua_values(bldg, space, outside_air_density), c.heating_setpoint_f,
                                    outdoor, c.ground_temp_winter_f)
 
+    if space.kind == "weighted":
+        return weighted_temperature(space, c.heating_setpoint_f, outdoor, c.ground_temp_winter_f)
     if space.kind in ("attic_vented", "attic_unvented"):
         if _attic_is_roof_insulated(bldg, space) and space.kind == "attic_unvented":
             return balance()
@@ -202,6 +215,8 @@ def cooling_design_temp(bldg: Building, space: BufferSpace, outside_air_density:
     outdoor = c.cooling_design_temp_f
     dr = T.DAILY_RANGE_INDEX[c.daily_temp_range]
 
+    if space.kind == "weighted":
+        return weighted_temperature(space, c.cooling_setpoint_f, outdoor, c.ground_temp_summer_f)
     if space.kind in ("attic_vented", "attic_unvented"):
         if _attic_is_roof_insulated(bldg, space):
             if space.kind == "attic_vented":

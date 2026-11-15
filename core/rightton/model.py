@@ -7,9 +7,9 @@ include air films unless stated otherwise.
 Adjacency. Every surface names what is on each side of it:
 
 * ``inside``  - the id of a conditioned ``Room`` or of a ``BufferSpace``;
-* ``outside`` - ``OUTSIDE``, ``GROUND``, the id of a ``BufferSpace``, or the id
-  of another ``Room`` (a partition between rooms, used for zone-to-zone
-  transfer).
+* ``outside`` - ``OUTSIDE``, ``GROUND``, ``ADIABATIC`` (no heat flow), the id of
+  a ``BufferSpace``, or the id of another ``Room`` (a partition between rooms,
+  used for zone-to-zone transfer).
 """
 
 from __future__ import annotations
@@ -21,6 +21,7 @@ from .assemblies import Assembly
 
 OUTSIDE = "outside"
 GROUND = "ground"
+ADIABATIC = "adiabatic"  # e.g. a party wall to a neighbor kept at the same temperature
 
 BUFFER_KINDS = (
     "attic_vented",
@@ -29,6 +30,7 @@ BUFFER_KINDS = (
     "crawlspace_unvented",
     "basement_unconditioned",
     "garage",
+    "weighted",  # temperature is a fixed blend of indoor, outdoor and ground temperatures
 )
 
 
@@ -84,6 +86,14 @@ class BufferSpace:
     volume_ft3: float = 0.0
     vent_sla: Optional[float] = None  # vent area / floor area, vented spaces
     vent_ach: Optional[float] = None  # alternative to vent_sla (vented attics)
+    # kind == "weighted" only (e.g. ducts in an exterior wall or under a slab, or a
+    # neighboring heated space): T = indoor*w_in + outdoor*w_out + ground*w_ground,
+    # not below min_temp_f. duct_regain is the share of duct loss recovered.
+    indoor_weight: float = 0.0
+    outdoor_weight: float = 1.0
+    ground_weight: float = 0.0
+    min_temp_f: Optional[float] = None
+    duct_regain: float = 0.0
     # Optional user overrides of the calculated design temperatures:
     heating_design_temp_f: Optional[float] = None
     cooling_design_temp_f: Optional[float] = None
@@ -123,6 +133,7 @@ class Wall(_Surface):
     # brick, adobe, concrete, stone, log, icf, straw_bale
     siding: str = "wood"  # "brick"/"stone" matter; anything else is light cladding
     solar_absorptance: float = 0.7
+    is_rim_joist: bool = False
 
 
 @dataclass
@@ -260,6 +271,8 @@ class Infiltration:
     height_ft: Optional[float] = None  # infiltration height, for natural ACH
     shielding_class: int = 4  # 1 (no shielding) .. 5 (very heavy)
     exterior_fraction: float = 1.0  # share of envelope exposed to outside (attached units)
+    unit_height_above_grade_ft: float = 0.0  # attached units and apartments only
+    site_shielding: str = "normal"  # "normal", "exposed", "well_shielded" (attached units only)
     has_fireplace: bool = False
 
 
@@ -378,7 +391,7 @@ class Building:
         for r in self.rooms:
             if r.zone not in zone_ids:
                 raise ValueError(f"Room '{r.id}' is in unknown zone '{r.zone}'.")
-        known = set(ids) | {OUTSIDE, GROUND}
+        known = set(ids) | {OUTSIDE, GROUND, ADIABATIC}
         for s in self.opaque_surfaces:
             if s.inside not in ids:
                 raise ValueError(f"Surface '{s.id}': unknown inside '{s.inside}'.")

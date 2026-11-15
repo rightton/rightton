@@ -141,12 +141,17 @@ def infiltration_airflows(bldg, htd_f: float, ctd_f: float) -> InfiltrationResul
             raise ValueError("Infiltration needs ach50, cfm50, natural_ach, ela_in2 or sla.")
         res.ela_in2 = res.sla * cfa * infil.exterior_fraction * 144.0
         res.stack_coefficient, res.wind_coefficient = stack_wind_coefficients(stories, infil.shielding_class)
-        # [CONFIRM] The reference scales wind speed with height for apartments and
-        # attached units above grade; not ported (v1 targets detached houses).
+        ws_cool, ws_heat = T.INFIL_WINDSPEED_COOLING_MPH, T.INFIL_WINDSPEED_HEATING_MPH
+        if bldg.facility_type != "single_family_detached" and infil.unit_height_above_grade_ft > 0:
+            # Attached units above grade: scale wind speed with height
+            exponent = T.WIND_HEIGHT_EXPONENT[infil.site_shielding]
+            story = (infil.unit_height_above_grade_ft + height) / height
+            ws_cool *= story**exponent
+            ws_heat *= story**exponent
         res.cooling_cfm = design_infiltration_cfm(res.ela_in2, res.stack_coefficient, res.wind_coefficient,
-                                                  ctd_f, T.INFIL_WINDSPEED_COOLING_MPH)
+                                                  ctd_f, ws_cool)
         res.heating_cfm = design_infiltration_cfm(res.ela_in2, res.stack_coefficient, res.wind_coefficient,
-                                                  htd_f, T.INFIL_WINDSPEED_HEATING_MPH)
+                                                  htd_f, ws_heat)
     elif infil.method == "default_table":
         ach_htg, ach_clg = default_table_ach(infil.leakiness, cfa, stories,
                                              bldg.facility_type == "single_family_detached")

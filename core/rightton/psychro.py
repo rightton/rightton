@@ -90,6 +90,25 @@ def humidity_ratio_from_wetbulb(tdb_f: float, twb_f: float, p_psi: float) -> flo
     return num / den
 
 
+def wetbulb_f(tdb_f: float, w: float, p_psi: float) -> float:
+    """Wetbulb temperature (F) from drybulb (F), humidity ratio and pressure (psi).
+
+    Inverse of ``humidity_ratio_from_wetbulb``. The reference
+    (Psychrometrics.Twb_fT_w_P) solves the same equation with its own iteration
+    scheme; here it is solved by bisection, to 1e-7 F.
+    """
+    lo, hi = -60.0, tdb_f
+    if humidity_ratio_from_wetbulb(tdb_f, hi, p_psi) <= w:
+        return tdb_f
+    for _ in range(60):
+        mid = (lo + hi) / 2.0
+        if humidity_ratio_from_wetbulb(tdb_f, mid, p_psi) < w:
+            lo = mid
+        else:
+            hi = mid
+    return (lo + hi) / 2.0
+
+
 def enthalpy_btu_per_lb(tdb_f: float, w: float) -> float:
     """Moist-air enthalpy (Btu/lb dry air) from drybulb (F) and humidity ratio (lb/lb).
 

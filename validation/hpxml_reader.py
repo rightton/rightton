@@ -14,6 +14,7 @@ different things.
 from __future__ import annotations
 
 import gzip
+import json
 import math
 import sys
 from pathlib import Path
@@ -41,6 +42,16 @@ BUFFER_LOCATIONS = {
 # Conditioned by someone else: surfaces to these carry no load in the reference
 # (HPXML::conditioned_locations includes them).
 ADIABATIC_LOCATIONS = {"other housing unit"}
+# Mirrors Geometry.get_temperature_scheduled_space_values:
+# (min temp F, indoor weight, outdoor weight, ground weight, duct regain)
+WEIGHTED_LOCATIONS = {
+    "other heated space": (68.0, 0.5, 0.5, 0.0, 0.0),
+    "other multifamily buffer space": (50.0, 0.5, 0.5, 0.0, 0.0),
+    "other non-freezing space": (40.0, 0.0, 1.0, 0.0, 0.0),
+    "other housing unit": (None, 1.0, 0.0, 0.0, 0.0),  # as a duct location only
+    "exterior wall": (None, 0.5, 0.5, 0.0, 0.5),
+    "under slab": (None, 0.0, 0.0, 1.0, 0.83),
+}
 
 WALL_TYPES = {
     "WoodStud": "wood_stud", "SteelFrame": "steel_stud", "DoubleWoodStud": "double_wood_stud",
@@ -105,6 +116,18 @@ def _is_defaulted(el, path):
     return found is not None and found.get("dataSource") == "software"
 
 
+def load_weather(epw_dir, epw_name) -> weather.Weather:
+    """Weather for a house: the EPW file if present, otherwise the JSON summary
+    of it that the comparison snapshot stores (EPW files are large)."""
+    epw = Path(epw_dir) / Path(epw_name).name
+    if epw.exists():
+        return weather.read_epw(epw)
+    summary = epw.with_suffix(".json")
+    if summary.exists():
+        return weather.Weather(**json.loads(summary.read_text()))
+    raise FileNotFoundError(f"No weather file or summary for {epw.name} in {epw_dir}")
+
+
 def parse(path):
     path = Path(path)
     opener = gzip.open if path.suffix == ".gz" else open
@@ -126,7 +149,7 @@ def load(path, epw_dir) -> M.Building:
 
     # --- Weather and design conditions ------------------------------------
     epw_name = _txt(details, "ClimateandRiskZones/WeatherStation/extension/EPWFilePath")
-    wx = weather.read_epw(Path(epw_dir) / Path(epw_name).name)
+    wx = load_weather(epw_dir, epw_name)
     soil = summary.find("Site/Soil")
     conditions = M.DesignConditions(
         heating_design_temp_f=_num(mj, "HeatingDesignTemperature"),
@@ -146,6 +169,8 @@ def load(path, epw_dir) -> M.Building:
         wsf=wx.wsf,
     )
 
+    if _num(constr, "NumberofUnits", 1) > 1:
+        raise Unsupported("unit multiplier (reference reports loads for all identical units together)")
     cfa = _num(constr, "ConditionedFloorArea")
     bldg = M.Building(
         conditions=conditions, zones=[], rooms=[],
@@ -154,8 +179,6 @@ def load(path, epw_dir) -> M.Building:
             _txt(constr, "ResidentialFacilityType"), "attached"),
         conditioned_floor_area_ft2=cfa,
     )
-    if bldg.facility_type != "single_family_detached" and _num(constr, "UnitHeightAboveGrade", 0.0) > 0:
-        raise Unsupported("attached unit above grade (wind speed scaling not ported)")
 
     # --- Zones and rooms ------------------------------------------------------
     space_of = {}  # surface id -> space id (explicit HPXML Spaces)
@@ -212,19 +235,23 @@ def load(path, epw_dir) -> M.Building:
                 bldg.buffer_spaces.append(M.BufferSpace(location, BUFFER_LOCATIONS[location]))
             return location
         if location in ADIABATIC_LOCATIONS:
-            return None
+            return M.ADIABATIC
+        if location in WEIGHTED_LOCATIONS:
+            return _weighted_space(bldg, location)
         raise Unsupported(f"location '{location}'")
 
-    def sides(el):
+    def sides(el, keep_interior=False):
         """(inside, outside) with the conditioned room, if any, on the inside."""
         inside = resolve(el, _txt(el, "InteriorAdjacentTo"))
         outside = resolve(el, _txt(el, "ExteriorAdjacentTo"))
-        if inside is None or outside is None:
-            return None
+        if inside == M.ADIABATIC:
+            inside, outside = outside, inside
         if not bldg.is_room(inside) and bldg.is_room(outside):
             inside, outside = outside, inside
         if bldg.is_room(inside) and bldg.is_room(outside):
-            return None  # between two conditioned rooms: no load in the reference
+            # Between two conditioned rooms: no load in the reference. Foundation
+            # walls are kept (as adiabatic) because basement geometry uses them.
+            return (inside, M.ADIABATIC) if keep_interior else None
         return inside, outside
 
     def assembly_r(el):
@@ -243,10 +270,10 @@ def load(path, epw_dir) -> M.Building:
         bldg.walls.append(M.Wall(
             id=sid(el), inside=s[0], outside=s[1], area_ft2=_num(el, "Area"), r_value=assembly_r(el),
             wall_type=wall_type, siding=SIDING.get(_txt(el, "Siding"), "light"),
-            solar_absorptance=_num(el, "SolarAbsorptance", 0.7)))
+            solar_absorptance=_num(el, "SolarAbsorptance", 0.7), is_rim_joist=el.tag == "RimJoist"))
 
     for el in enclosure.findall("FoundationWalls/FoundationWall"):
-        s = sides(el)
+        s = sides(el, keep_interior=True)
         if s is None:
             continue
         height = _num(el, "Height")
@@ -359,6 +386,14 @@ def load(path, epw_dir) -> M.Building:
     return bldg
 
 
+def _weighted_space(bldg, location):
+    if bldg.buffer(location) is None:
+        min_temp, w_in, w_out, w_ground, regain = WEIGHTED_LOCATIONS[location]
+        bldg.buffer_spaces.append(M.BufferSpace(location, "weighted", indoor_weight=w_in, outdoor_weight=w_out,
+                                                ground_weight=w_ground, min_temp_f=min_temp, duct_regain=regain))
+    return location
+
+
 def _has_location(enclosure, location):
     return any(el.text == location for el in enclosure.iter() if el.tag in ("InteriorAdjacentTo", "ExteriorAdjacentTo"))
 
@@ -391,6 +426,8 @@ def _set_buffer_volumes_and_vents(bldg, enclosure):
     default_height = {"basement_unconditioned": 8.0, "crawlspace_unvented": 3.0, "crawlspace_vented": 3.0,
                       "garage": 8.0}
     for space in bldg.buffer_spaces:
+        if space.kind == "weighted":
+            continue
         if space.kind in ("attic_vented", "attic_unvented"):
             roofs = [r for r in bldg.roofs if r.inside == space.id]
             if not roofs:
@@ -461,10 +498,22 @@ def _read_infiltration(bldg, details, enclosure, mj):
         if chosen is None:
             raise Unsupported("no leakiness description")
         infil.leakiness = LEAKINESS[_txt(chosen, "LeakinessDescription")]
-        raise Unsupported("default infiltration table (above-grade volume not mapped yet)")
+        # Mirrors HPXML::Building#above_grade_conditioned_volume
+        volume = _num(details, "BuildingSummary/BuildingConstruction/ConditionedBuildingVolume")
+        walls = [fw for fw in bldg.foundation_walls if fw.outside == M.GROUND and bldg.is_room(fw.inside)
+                 and bldg.room(fw.inside).below_grade]
+        floor_area = sum(s.area_ft2 for s in bldg.slabs if bldg.is_room(s.inside) and bldg.room(s.inside).below_grade)
+        if floor_area > 0:
+            perimeter = sum(fw.area_ft2 / fw.height_ft for fw in walls)
+            volume -= sum(fw.depth_below_grade_ft * fw.area_ft2 / fw.height_ft for fw in walls) / perimeter * floor_area
+        bldg.above_grade_volume_ft3 = volume
     has_fireplace = any(_txt(fl, "FuelLoadType") == "fireplace" for fl in details.iter("FuelLoad"))
     has_fireplace |= any(hs.find("HeatingSystemType/Fireplace") is not None for hs in details.iter("HeatingSystem"))
     infil.has_fireplace = has_fireplace
+    summary = details.find("BuildingSummary")
+    infil.unit_height_above_grade_ft = _num(summary, "BuildingConstruction/UnitHeightAboveGrade", 0.0)
+    infil.site_shielding = {"normal": "normal", "exposed": "exposed", "well-shielded": "well_shielded"}[
+        _txt(summary, "Site/ShieldingofHome", "normal")]
     bldg.infiltration = infil
 
 
@@ -495,28 +544,13 @@ def _read_hvac(bldg, details):
     if hvac is None:
         return
     plant = hvac.find("HVACPlant")
-    heating = [] if plant is None else plant.findall("HeatingSystem")
-    cooling = [] if plant is None else plant.findall("CoolingSystem")
-    pumps = [] if plant is None else plant.findall("HeatPump")
-    if len(heating) + len(pumps) > 1 or len(cooling) + len(pumps) > 1:
-        raise Unsupported("more than one heating or cooling system")
-    if len(bldg.zones) > 1:
-        raise Unsupported("multiple conditioned zones with HVAC (system-to-zone mapping not ported)")
-    for el in heating + cooling + pumps:
-        for tag in ("FractionHeatLoadServed", "FractionCoolLoadServed"):
-            frac = _num(el, tag)
-            if frac is not None and 0 < frac < 1:
-                raise Unsupported("HVAC system serving part of the load")
-        if _num(el, "IntegratedHeatingSystemFractionHeatLoadServed") is not None:
-            raise Unsupported("cooling system with integrated heating")
-    for el in heating:
-        if _txt(el, "ElectricResistance/ElectricDistribution") == "radiant floor" or \
-                _txt(el, "HeatingSystemType/ElectricResistance/ElectricDistribution") == "radiant floor":
-            bldg.zones[0].has_radiant_floor = True
+    if plant is None:
+        return
     distributions = {d.find("SystemIdentifier").get("id"): d for d in hvac.findall("HVACDistribution")}
-    for d in distributions.values():
-        if _txt(d, "DistributionSystemType/HydronicDistribution/HydronicDistributionType") == "radiant floor":
-            bldg.zones[0].has_radiant_floor = True
+
+    def zone_id(el):
+        ref = el.find("AttachedToZone")
+        return bldg.zones[0].id if ref is None else ref.get("idref")
 
     def dist_id(el):
         ref = el.find("DistributionSystem")
@@ -528,45 +562,68 @@ def _read_hvac(bldg, details):
             return flow / (capacity / 12000.0)
         return default
 
-    heat_el = (heating + pumps)[0] if heating + pumps else None
-    cool_el = (cooling + pumps)[0] if cooling + pumps else None
-    if cool_el is not None and _txt(cool_el, "CoolingSystemType") == "evaporative cooler":
-        raise Unsupported("evaporative cooler")
-    if heat_el is not None and heat_el.tag == "HeatPump" and _txt(heat_el, "HeatPumpType") == "water-loop-to-air":
-        raise Unsupported("water-loop heat pump")
-    systems = {}
-    for el, mode in ((heat_el, "heat"), (cool_el, "cool")):
-        if el is None or dist_id(el) is None:
-            continue
-        d = distributions[dist_id(el)]
-        system = systems.get(dist_id(el))
-        if system is None:
-            system = _read_distribution(bldg, d)
-            system.has_heating = system.has_cooling = False
-            systems[dist_id(el)] = system
-        if mode == "heat":
-            system.has_heating = True
-            if el.tag == "HeatPump":
+    for zone in bldg.zones:
+        heating = [e for e in plant.findall("HeatingSystem") if zone_id(e) == zone.id]
+        cooling = [e for e in plant.findall("CoolingSystem") if zone_id(e) == zone.id]
+        pumps = [e for e in plant.findall("HeatPump") if zone_id(e) == zone.id]
+        if len(heating) + len(pumps) > 1 or len(cooling) + len(pumps) > 1:
+            raise Unsupported("more than one heating or cooling system in a zone")
+        for el in heating + cooling + pumps:
+            for tag in ("FractionHeatLoadServed", "FractionCoolLoadServed"):
+                frac = _num(el, tag)
+                if frac is not None and 0 < frac < 1 and len(bldg.zones) == 1:
+                    raise Unsupported("HVAC system serving part of the load")
+            if _num(el, "IntegratedHeatingSystemFractionHeatLoadServed") is not None:
+                raise Unsupported("cooling system with integrated heating")
+        for el in heating:
+            if _txt(el, "HeatingSystemType/ElectricResistance/ElectricDistribution") == "radiant floor":
+                zone.has_radiant_floor = True
+            d = distributions.get(dist_id(el))
+            if d is not None and _txt(
+                    d, "DistributionSystemType/HydronicDistribution/HydronicDistributionType") == "radiant floor":
+                zone.has_radiant_floor = True
+
+        heat_el = (heating + pumps)[0] if heating + pumps else None
+        cool_el = (cooling + pumps)[0] if cooling + pumps else None
+        # A system that serves none of the load gets no duct load in the reference
+        if heat_el is not None and _num(heat_el, "FractionHeatLoadServed", 1.0) == 0:
+            heat_el = None
+        if cool_el is not None and _num(cool_el, "FractionCoolLoadServed", 1.0) == 0:
+            cool_el = None
+        if cool_el is not None and _txt(cool_el, "CoolingSystemType") == "evaporative cooler":
+            raise Unsupported("evaporative cooler")
+        if heat_el is not None and heat_el.tag == "HeatPump" and _txt(heat_el, "HeatPumpType") == "water-loop-to-air":
+            raise Unsupported("water-loop heat pump")
+        systems = {}
+        for el, mode in ((heat_el, "heat"), (cool_el, "cool")):
+            if el is None or dist_id(el) is None:
+                continue
+            system = systems.get(dist_id(el))
+            if system is None:
+                system = _read_distribution(bldg, distributions[dist_id(el)], zone)
+                system.has_heating = system.has_cooling = False
+                systems[dist_id(el)] = system
+            if mode == "heat":
+                system.has_heating = True
+                default = 240.0
+                if el.tag == "HeatPump":
+                    default = cfm_per_ton(el, "extension/CoolingDesignAirflowCFM", "CoolingCapacity", 360.0)
                 system.heating_cfm_per_ton = cfm_per_ton(el, "extension/HeatingDesignAirflowCFM", "HeatingCapacity",
-                                                         cfm_per_ton(el, "extension/CoolingDesignAirflowCFM",
-                                                                     "CoolingCapacity", 360.0))
+                                                         default)
             else:
-                system.heating_cfm_per_ton = cfm_per_ton(el, "extension/HeatingDesignAirflowCFM", "HeatingCapacity",
-                                                         240.0)
-        else:
-            system.has_cooling = True
-            default = 360.0
-            if el.tag == "HeatPump":
-                default = cfm_per_ton(el, "extension/HeatingDesignAirflowCFM", "HeatingCapacity", 360.0)
-            system.cooling_cfm_per_ton = cfm_per_ton(el, "extension/CoolingDesignAirflowCFM", "CoolingCapacity",
-                                                     default)
-    bldg.distribution_systems.extend(systems.values())
+                system.has_cooling = True
+                default = 360.0
+                if el.tag == "HeatPump":
+                    default = cfm_per_ton(el, "extension/HeatingDesignAirflowCFM", "HeatingCapacity", 360.0)
+                system.cooling_cfm_per_ton = cfm_per_ton(el, "extension/CoolingDesignAirflowCFM", "CoolingCapacity",
+                                                         default)
+        bldg.distribution_systems.extend(systems.values())
 
 
-def _read_distribution(bldg, d):
+def _read_distribution(bldg, d, zone):
     air = d.find("DistributionSystemType/AirDistribution")
     hydronic = d.find("DistributionSystemType/HydronicDistribution")
-    system = M.DistributionSystem(zone=bldg.zones[0].id)
+    system = M.DistributionSystem(zone=zone.id)
     if hydronic is not None:
         system.piping_btuh = _num(hydronic, "extension/ManualJInputs/HotWaterPipingBtuh", 0.0)
     if air is None:
@@ -593,12 +650,14 @@ def _read_distribution(bldg, d):
     for duct in air.findall("Ducts"):
         location = _txt(duct, "DuctLocation")
         if location in ROOM_LOCATIONS:
-            location = bldg.rooms[0].id
+            location = bldg.zone_rooms(zone.id)[0].id
         elif location == "outside":
             location = M.OUTSIDE
         elif location in BUFFER_LOCATIONS:
             if bldg.buffer(location) is None:
                 raise Unsupported(f"ducts in '{location}', which has no surfaces")
+        elif location in WEIGHTED_LOCATIONS:
+            _weighted_space(bldg, location)
         else:
             raise Unsupported(f"duct location '{location}'")
         system.ducts.append(M.Duct(

@@ -31,7 +31,7 @@ from typing import Optional
 from . import airflow, ducts, envelope, fenestration as fen, psychro, spaces, tables as T
 from .foundation import (basement_slab_u, foundation_wall_above_grade_u, foundation_wall_below_grade_u,
                          slab_f_value)
-from .model import GROUND, OUTSIDE, Building, FoundationWall
+from .model import ADIABATIC, GROUND, OUTSIDE, Building, FoundationWall
 
 HEAT_COMPONENTS = ("heat_windows", "heat_skylights", "heat_doors", "heat_walls", "heat_roofs", "heat_floors",
                    "heat_slabs", "heat_ceilings", "heat_infiltration", "heat_ventilation", "heat_interzone",
@@ -209,12 +209,12 @@ def calculate(bldg: Building) -> Results:
         details.append(SurfaceDetail(kind, sid, room_id, area, heat_htm, cool_htm, heat, cool))
 
     def is_boundary(s):  # conditioned room on the inside, anything but a room outside
-        return bldg.is_room(s.inside) and not bldg.is_room(s.outside)
+        return bldg.is_room(s.inside) and not bldg.is_room(s.outside) and s.outside != ADIABATIC
 
     # --- Windows (process_load_windows_skylights) ----------------------------
     for w in bldg.windows:
         wall = bldg.wall_by_id(w.wall)
-        if not (is_boundary(wall) and wall.outside == OUTSIDE):
+        if not (is_boundary(wall) and wall.outside in (OUTSIDE, GROUND)):
             continue
         room = wall.inside
         u, shgc = fen.storm_adjusted(w.u_factor, w.shgc, w.storm)
@@ -303,7 +303,7 @@ def calculate(bldg: Building) -> Results:
 
     # --- Roofs over conditioned rooms (process_load_roofs) -------------------
     for roof in bldg.roofs:
-        if not bldg.is_room(roof.inside):
+        if not is_boundary(roof):
             continue
         room = roof.inside
         cltd = envelope.roof_cltd(roof.r, roof.roof_type, roof.roof_color, c.cooling_design_temp_f, site.dr)
@@ -402,10 +402,14 @@ def calculate(bldg: Building) -> Results:
     room_peak = {}
     for r in bldg.rooms:
         loads = rooms[r.id]
+        # A room's own excursion (its glass may all face one way); the zone value
+        # below is computed from the zone's combined hourly curve instead.
+        loads.cool_aed_excursion = fen.aed_excursion(loads.hourly_fenestration)
         loads.update_totals()
-        # The room on its own: peak-hour fenestration instead of the daily average
+        # The room at its own peak hour: peak-hour fenestration load in place of
+        # the daily-average load plus excursion (the reference's "peak" procedure).
         room_peak[r.id] = (loads.cool_sensible - loads.cool_windows - loads.cool_skylights
-                           + max(hourly_windows[r.id]) + max(hourly_skylights[r.id]))
+                           - loads.cool_aed_excursion + max(hourly_windows[r.id]) + max(hourly_skylights[r.id]))
 
     zones = {}
     for z in bldg.zones:
@@ -449,7 +453,8 @@ def _enclosing_wall_u(bldg: Building, space_id: str) -> float:
             ua += fw_ua
             area += fw_area
     for w in bldg.walls:
-        if w.inside == space_id and w.outside == OUTSIDE:
+        # Rim joists are left out, as in the reference (it sums walls and foundation walls only).
+        if w.inside == space_id and w.outside == OUTSIDE and not w.is_rim_joist:
             net = bldg.net_area_ft2(w)
             ua += w.u * net
             area += net
@@ -511,14 +516,21 @@ def _apply_distribution(bldg, system, site, zone_loads: Loads, room_loads: list[
             indoor_enthalpy=site.indoor_enthalpy, altitude_factor=site.acf,
             design_grains=c.humidity_difference_grains)
 
-    # Share duct loads among rooms in proportion to each room's load
-    zone_heat = sum(r.heat_total for r in room_loads)
-    zone_cool_sens = sum(r.cool_sensible for r in room_loads)
+    # Share duct loads among rooms in proportion to each room's load. Ventilation
+    # is left out of the weights because the reference assigns it to zones only.
+    def heat_weight(r):
+        return r.heat_total - r.heat_ventilation
+
+    def cool_weight(r):
+        return r.cool_sensible - r.cool_ventilation_sens
+
+    zone_heat = sum(heat_weight(r) for r in room_loads)
+    zone_cool_sens = sum(cool_weight(r) for r in room_loads)
     for r in room_loads:
         if zone_heat:
-            r.heat_ducts += duct_heat * r.heat_total / zone_heat
+            r.heat_ducts += duct_heat * heat_weight(r) / zone_heat
         if zone_cool_sens:
-            share = r.cool_sensible / zone_cool_sens
+            share = cool_weight(r) / zone_cool_sens
             r.cool_ducts_sens += duct_cool_sens * share
             r.cool_ducts_lat += duct_cool_lat * share  # RightTon extension (reference: zone only)
     zone_loads.heat_ducts += duct_heat

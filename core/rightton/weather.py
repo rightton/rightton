@@ -118,19 +118,46 @@ def read_epw(path) -> Weather:
         heating_f, cooling_f, dtr_f = psychro.c_to_f(heat_c), psychro.c_to_f(cool_c), range_c * 1.8
         w_cool = psychro.humidity_ratio_from_wetbulb(cooling_f, psychro.c_to_f(mcwb_c), p_psi)
     else:
-        # [CONFIRM] Fallback from hourly data (calc_design_info) is not ported: it needs
-        # the wetbulb solver and monthly high/low averages.
-        raise ValueError("EPW file has no usable DESIGN CONDITIONS header.")
+        heating_f, cooling_f, dtr_f, w_cool = design_from_hourly(db, rh, months, monthly_f, p_psi)
 
     wsf = lookup_wsf(wmo)
     if wsf is None:
         wsf = calc_wsf(db, ws)
-    _ = rh
     return Weather(city=city, wmo=wmo, latitude_deg=latitude, longitude_deg=longitude, elevation_ft=elevation_ft,
                    heating_drybulb_f=heating_f, cooling_drybulb_f=cooling_f, daily_temp_range_f=dtr_f,
                    cooling_humidity_ratio=w_cool, annual_avg_drybulb_f=annual_avg_f,
                    monthly_avg_drybulb_f=monthly_f,
                    shallow_ground_monthly_f=shallow_ground_temps_f(annual_avg_f, monthly_f, latitude), wsf=wsf)
+
+
+def design_from_hourly(drybulb_c, rh_frac, months, monthly_avg_f, p_psi):
+    """(heating DB F, cooling DB F, daily range F, cooling humidity ratio) from
+    hourly data, for EPW files without a design-conditions header.
+
+    Source: calc_design_info and calc_avg_monthly_highs_lows: the 99 % and 1 %
+    drybulb are the 89th-lowest and 8674th-lowest hours; the coincident wetbulb is
+    the mean wetbulb of hours within 0.5 C of the 1 % drybulb; the daily range is
+    the mean daily high minus mean daily low in the warmest month.
+    """
+    order = sorted(range(len(drybulb_c)), key=lambda i: drybulb_c[i])
+    heat_c = drybulb_c[order[88]]
+    cool_c = drybulb_c[order[8673]]
+    wetbulbs = []
+    for i in order:
+        if cool_c - 0.5 < drybulb_c[i] < cool_c + 0.5:
+            t_f = psychro.c_to_f(drybulb_c[i])
+            wetbulbs.append(psychro.wetbulb_f(t_f, psychro.humidity_ratio_from_rh(t_f, rh_frac[i], p_psi), p_psi))
+    cooling_f = psychro.c_to_f(cool_c)
+    w_cool = psychro.humidity_ratio_from_wetbulb(cooling_f, sum(wetbulbs) / len(wetbulbs), p_psi)
+    hottest = max(range(12), key=lambda m: (monthly_avg_f[m], m)) + 1
+    highs, lows = [], []
+    for start in range(0, len(drybulb_c) - 23, 24):
+        if months[start] == hottest:
+            day = drybulb_c[start:start + 24]
+            highs.append(max(day))
+            lows.append(min(day))
+    dtr_f = (sum(highs) / len(highs) - sum(lows) / len(lows)) * 1.8
+    return psychro.c_to_f(heat_c), cooling_f, dtr_f, w_cool
 
 
 def _design_from_header(row: list[str]):
