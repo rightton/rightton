@@ -222,3 +222,11 @@ __marimo__/
 # Private user data: real house files never leave the device
 private/
 *.private.json
+
+# Web app: dependencies, build output, and run-time assets copied in by app/scripts/prepare-assets.mjs
+app/node_modules/
+app/dist/
+app/public/pyodide/
+app/public/core.json
+app/public/examples/
+app/public/schema/
