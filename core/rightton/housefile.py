@@ -725,7 +725,9 @@ def from_building(bldg: M.Building, name: str = "", description: str = "") -> di
     for item in [*bldg.zones, *bldg.rooms, *bldg.buffer_spaces]:
         new_id(item.id)
 
-    def side(ref):
+    def side(ref, inside=None):
+        if ref == inside:  # same place on both sides (e.g. a party wall inside an attic): no heat flow
+            return "adiabatic"
         return {M.OUTSIDE: "outdoors", M.GROUND: "ground", M.ADIABATIC: "adiabatic"}.get(ref) or ids[ref]
 
     assemblies: list[dict] = []
@@ -796,9 +798,9 @@ def from_building(bldg: M.Building, name: str = "", description: str = "") -> di
         asm = assembly("wall", w.r, construction=w.wall_type, cladding=w.siding if w.siding in ("brick", "stone") else "wood",
                        solar_absorptance_frac=w.solar_absorptance)
         surfaces.append({"id": new_id(w.id), "type": "rim_joist" if w.is_rim_joist else "wall", "inside": ids[w.inside],
-                         "outside": side(w.outside), "area_ft2": w.area_ft2, "assembly": asm})
+                         "outside": side(w.outside, w.inside), "area_ft2": w.area_ft2, "assembly": asm})
     for fw in bldg.foundation_walls:
-        s = {"id": new_id(fw.id), "type": "foundation_wall", "inside": ids[fw.inside], "outside": side(fw.outside),
+        s = {"id": new_id(fw.id), "type": "foundation_wall", "inside": ids[fw.inside], "outside": side(fw.outside, fw.inside),
              "area_ft2": fw.area_ft2, "height_ft": fw.height_ft, "depth_below_grade_ft": fw.depth_below_grade_ft,
              "thickness_in": fw.thickness_in, "material": fw.wall_type}
         if fw.r_value is not None:
@@ -819,7 +821,7 @@ def from_building(bldg: M.Building, name: str = "", description: str = "") -> di
                          "assembly": asm, "pitch_rise_per_12": r.pitch})
     for f in bldg.floors:
         kind = "ceiling" if f.is_ceiling else "floor"
-        surfaces.append({"id": new_id(f.id), "type": kind, "inside": ids[f.inside], "outside": side(f.outside),
+        surfaces.append({"id": new_id(f.id), "type": kind, "inside": ids[f.inside], "outside": side(f.outside, f.inside),
                          "area_ft2": f.area_ft2, "assembly": assembly(kind, f.r)})
     for sl in bldg.slabs:
         s = {"id": new_id(sl.id), "type": "slab", "inside": ids[sl.inside], "area_ft2": sl.area_ft2,
