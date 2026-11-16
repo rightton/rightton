@@ -1,0 +1,275 @@
+# RightTon house file - a FICTIONAL old house, written by hand as a worked example.
+# It is not a real building. It shows the features older houses need:
+#   - balloon-framed walls with empty cavities, plaster on lath, board sheathing
+#   - single-pane windows behind a deep front porch, some with storm windows
+#   - a glassy sunroom addition
+#   - a raised floor over a vented crawlspace
+#   - a sealed attic insulated at the roof deck, with the ducts inside it
+#   - 11 ft ceilings, a measured blower-door number, a dehumidifier
+#   - retrofit scenarios
+# Plan: 40 ft wide x 30 ft deep, one story, front faces south behind a full-width porch.
+#   Front: parlor (SW), hall (center, front to back), front bedroom (SE).
+#   Back:  kitchen (NW), back bedroom (NE), sunroom added behind the hall.
+
+format_version: 1.0.0
+
+project:
+  name: Fictional 1920s raised cottage
+  description: Invented example house for the RightTon format. Not a real building.
+  bedroom_count: 2
+
+location:
+  weather_station_id: "722430"
+  weather_station_name: Houston Bush Intercontinental
+
+assemblies:
+  - id: wall-balloon
+    name: Balloon-frame wall, empty cavity
+    type: wall
+    construction: wood_stud
+    cladding: wood
+    solar_absorptance_frac: 0.5        # light paint
+    framing_frac: 0.2
+    layers:                            # inside to outside; air films are added automatically
+      - material: plaster_on_wood_lath
+      - name: Empty stud cavity
+        material: air_space_closed
+        thickness_in: 3.75             # full-dimension 2x4
+        framing_material: softwood
+      - material: board_sheathing
+      - material: wood_siding
+  - id: wall-sunroom
+    name: Sunroom wall, 2x4 with R-11 batts
+    type: wall
+    framing_frac: 0.3                  # lots of window framing
+    solar_absorptance_frac: 0.5
+    layers:
+      - material: gypsum_board
+        thickness_in: 0.5
+      - name: R-11 batt
+        r_value_hr_ft2_f_btu: 11
+        thickness_in: 3.5
+        framing_material: softwood
+      - material: softwood
+        name: Plywood sheathing
+        thickness_in: 0.5
+      - material: wood_siding
+  - id: wall-gable-foam
+    name: Attic gable wall, spray foam between studs
+    type: wall
+    framing_frac: 0.2
+    solar_absorptance_frac: 0.5
+    layers:
+      - material: spray_foam_open_cell
+        thickness_in: 3.5
+        framing_material: softwood
+      - material: board_sheathing
+      - material: wood_siding
+  - id: ceiling-plaster
+    name: Plaster ceiling under the sealed attic (no insulation)
+    type: ceiling
+    layers:
+      - material: plaster_on_wood_lath
+  - id: roof-foam
+    name: Roof deck with 5.5 in open-cell spray foam
+    type: roof
+    roofing: asphalt_shingles
+    roof_color: medium
+    framing_frac: 0.1
+    layers:
+      - material: spray_foam_open_cell
+        thickness_in: 5.5
+        framing_material: softwood
+      - material: board_sheathing
+      - material: asphalt_shingles_on_deck
+  - id: roof-sunroom
+    name: Sunroom low-slope roof, R-13 batts
+    type: roof
+    roofing: metal
+    roof_color: light
+    framing_frac: 0.1
+    layers:
+      - material: gypsum_board
+        thickness_in: 0.5
+      - name: R-13 batt
+        r_value_hr_ft2_f_btu: 13
+        thickness_in: 3.5
+        framing_material: softwood
+      - material: softwood
+        name: Plywood deck
+        thickness_in: 0.5
+      - material: metal_roofing
+  - id: floor-raised
+    name: Raised wood floor, no insulation
+    type: floor
+    layers:
+      - material: hardwood_flooring
+      - material: softwood
+        name: Board subfloor
+        thickness_in: 0.75
+
+zones:
+  - id: main
+    name: Whole house
+
+rooms:
+  - {id: parlor, name: Parlor, zone: main, floor_area_ft2: 240, ceiling_height_ft: 11}
+  - {id: hall, name: Center hall, zone: main, floor_area_ft2: 300, ceiling_height_ft: 11}
+  - {id: bedroom-front, name: Front bedroom, zone: main, floor_area_ft2: 240, ceiling_height_ft: 11}
+  - {id: kitchen, name: Kitchen, zone: main, floor_area_ft2: 210, ceiling_height_ft: 11}
+  - {id: bedroom-back, name: Back bedroom and bath, zone: main, floor_area_ft2: 210, ceiling_height_ft: 11}
+  - {id: sunroom, name: Sunroom addition, zone: main, floor_area_ft2: 120, ceiling_height_ft: 9}
+
+spaces:
+  - id: front-porch
+    name: Front porch, 8 ft deep
+    type: open_porch
+  - id: crawlspace
+    name: Vented crawlspace on brick piers and curtain wall
+    type: vented_crawlspace
+  - id: attic
+    name: Sealed attic (inside the insulation, not lived in)
+    type: conditioned
+    zone: main
+    volume_ft3: 6000
+
+surfaces:
+  # --- Walls of the original house (11 ft tall) ---
+  - {id: parlor-south, type: wall, inside: parlor, outside: front-porch, area_ft2: 165, assembly: wall-balloon, azimuth_deg: 180}
+  - {id: parlor-west, type: wall, inside: parlor, area_ft2: 176, assembly: wall-balloon, azimuth_deg: 270}
+  - {id: hall-south, type: wall, inside: hall, outside: front-porch, area_ft2: 110, assembly: wall-balloon, azimuth_deg: 180}
+  - {id: bedroom-front-south, type: wall, inside: bedroom-front, outside: front-porch, area_ft2: 165, assembly: wall-balloon, azimuth_deg: 180}
+  - {id: bedroom-front-east, type: wall, inside: bedroom-front, area_ft2: 176, assembly: wall-balloon, azimuth_deg: 90}
+  - {id: kitchen-west, type: wall, inside: kitchen, area_ft2: 154, assembly: wall-balloon, azimuth_deg: 270}
+  - {id: kitchen-north, type: wall, inside: kitchen, area_ft2: 165, assembly: wall-balloon, azimuth_deg: 0}
+  - {id: bedroom-back-east, type: wall, inside: bedroom-back, area_ft2: 154, assembly: wall-balloon, azimuth_deg: 90}
+  - {id: bedroom-back-north, type: wall, inside: bedroom-back, area_ft2: 165, assembly: wall-balloon, azimuth_deg: 0}
+  # --- Sunroom (9 ft walls, its own roof) ---
+  - {id: sunroom-west, type: wall, inside: sunroom, area_ft2: 108, assembly: wall-sunroom, azimuth_deg: 270}
+  - {id: sunroom-north, type: wall, inside: sunroom, area_ft2: 90, assembly: wall-sunroom, azimuth_deg: 0}
+  - {id: sunroom-east, type: wall, inside: sunroom, area_ft2: 108, assembly: wall-sunroom, azimuth_deg: 90}
+  - {id: sunroom-roof, type: roof, inside: sunroom, area_ft2: 125, assembly: roof-sunroom, azimuth_deg: 0, pitch_rise_per_12: 2}
+  # --- Ceilings under the sealed attic (same zone on both sides, so they carry no load) ---
+  - {id: parlor-ceiling, type: ceiling, inside: parlor, outside: attic, area_ft2: 240, assembly: ceiling-plaster}
+  - {id: hall-ceiling, type: ceiling, inside: hall, outside: attic, area_ft2: 300, assembly: ceiling-plaster}
+  - {id: bedroom-front-ceiling, type: ceiling, inside: bedroom-front, outside: attic, area_ft2: 240, assembly: ceiling-plaster}
+  - {id: kitchen-ceiling, type: ceiling, inside: kitchen, outside: attic, area_ft2: 210, assembly: ceiling-plaster}
+  - {id: bedroom-back-ceiling, type: ceiling, inside: bedroom-back, outside: attic, area_ft2: 210, assembly: ceiling-plaster}
+  # --- The sealed attic's own envelope: 8-in-12 roof over 40 x 30 ft, two gable ends ---
+  - {id: attic-roof-south, type: roof, inside: attic, area_ft2: 721, assembly: roof-foam, azimuth_deg: 180, pitch_rise_per_12: 8}
+  - {id: attic-roof-north, type: roof, inside: attic, area_ft2: 721, assembly: roof-foam, azimuth_deg: 0, pitch_rise_per_12: 8}
+  - {id: attic-gable-west, type: wall, inside: attic, area_ft2: 150, assembly: wall-gable-foam, azimuth_deg: 270}
+  - {id: attic-gable-east, type: wall, inside: attic, area_ft2: 150, assembly: wall-gable-foam, azimuth_deg: 90}
+  # --- Raised floors over the crawlspace ---
+  - {id: parlor-floor, type: floor, inside: parlor, outside: crawlspace, area_ft2: 240, assembly: floor-raised}
+  - {id: hall-floor, type: floor, inside: hall, outside: crawlspace, area_ft2: 300, assembly: floor-raised}
+  - {id: bedroom-front-floor, type: floor, inside: bedroom-front, outside: crawlspace, area_ft2: 240, assembly: floor-raised}
+  - {id: kitchen-floor, type: floor, inside: kitchen, outside: crawlspace, area_ft2: 210, assembly: floor-raised}
+  - {id: bedroom-back-floor, type: floor, inside: bedroom-back, outside: crawlspace, area_ft2: 210, assembly: floor-raised}
+  - {id: sunroom-floor, type: floor, inside: sunroom, outside: crawlspace, area_ft2: 120, assembly: floor-raised}
+  # --- The crawlspace itself: 3 ft brick curtain wall, dirt floor ---
+  - id: crawl-wall
+    type: foundation_wall
+    inside: crawlspace
+    area_ft2: 522                      # 174 ft of perimeter x 3 ft
+    height_ft: 3
+    depth_below_grade_ft: 0.5
+    thickness_in: 8
+    material: double_brick
+  - id: crawl-floor
+    type: slab
+    inside: crawlspace
+    area_ft2: 1320
+    exposed_perimeter_ft: 174
+    thickness_in: 0                    # dirt
+
+openings:
+  # Original double-hung windows: single pane, wood sash, 3 ft x 6.5 ft
+  - {id: parlor-south-windows, type: window, surface: parlor-south, count: 2, width_ft: 3, height_ft: 6.5, glazing: single_clear_wood}
+  - id: parlor-west-windows
+    type: window
+    surface: parlor-west
+    count: 2
+    width_ft: 3
+    height_ft: 6.5
+    glazing: single_clear_wood
+    storm_window: clear                # aluminum storms added on the west side
+    interior_shading: {type: light_curtains, coverage_frac: 0.5}
+  - {id: bedroom-front-south-windows, type: window, surface: bedroom-front-south, count: 2, width_ft: 3, height_ft: 6.5, glazing: single_clear_wood}
+  - {id: bedroom-front-east-windows, type: window, surface: bedroom-front-east, count: 2, width_ft: 3, height_ft: 6.5, glazing: single_clear_wood}
+  - {id: kitchen-west-window, type: window, surface: kitchen-west, width_ft: 3, height_ft: 5, glazing: single_clear_wood, storm_window: clear}
+  - {id: kitchen-north-windows, type: window, surface: kitchen-north, count: 2, width_ft: 3, height_ft: 5, glazing: single_clear_wood}
+  - {id: bedroom-back-east-windows, type: window, surface: bedroom-back-east, count: 2, width_ft: 3, height_ft: 6.5, glazing: single_clear_wood}
+  - {id: bedroom-back-north-window, type: window, surface: bedroom-back-north, width_ft: 3, height_ft: 6.5, glazing: single_clear_wood}
+  - {id: front-door, type: door, surface: hall-south, width_ft: 3, height_ft: 7, r_value_hr_ft2_f_btu: {value: 2.5, source: solid wood panel door, confidence: estimated}}
+  # Sunroom: double-pane units on three sides, and the back door
+  - {id: sunroom-west-windows, type: window, surface: sunroom-west, count: 3, width_ft: 3, height_ft: 6, glazing: double_clear_wood}
+  - {id: sunroom-north-windows, type: window, surface: sunroom-north, count: 3, width_ft: 3, height_ft: 6, glazing: double_clear_wood}
+  - {id: sunroom-east-windows, type: window, surface: sunroom-east, count: 3, width_ft: 3, height_ft: 6, glazing: double_clear_wood}
+  - {id: back-door, type: door, surface: sunroom-north, width_ft: 3, height_ft: 6.67, r_value_hr_ft2_f_btu: 4.4}
+
+air:
+  infiltration:
+    method: blower_door
+    air_changes_per_hr_at_50pa: {value: 14, source: blower door test (fictional), confidence: measured}
+    shielding_class: 4
+    stories_above_grade: 1
+  ducts:
+    - id: main-ducts
+      system: heat-pump
+      supply_leakage_cfm_at_25pa: 0    # leaks stay inside the sealed attic, so nothing leaks to outside
+      return_leakage_cfm_at_25pa: 0
+      segments:                        # all ducts are in the sealed attic, so they lose nothing to outside
+        - {type: supply, location: attic, share_of_ducts_frac: 1.0, insulation_r_value_hr_ft2_f_btu: 6}
+        - {type: return, location: attic, share_of_ducts_frac: 1.0, insulation_r_value_hr_ft2_f_btu: 6}
+
+equipment:
+  - id: dehumidifier
+    name: Whole-house dehumidifier
+    type: dehumidifier
+    room: hall
+    sensible_heat_btu_hr: {value: 1800, source: nameplate estimate (fictional), confidence: estimated}
+    latent_heat_btu_hr: {value: -1200, source: nameplate estimate (fictional), confidence: estimated}
+
+hvac:
+  systems:
+    - id: heat-pump
+      name: Ducted heat pump, air handler in the sealed attic
+      zone: main
+      heating: heat_pump
+      cooling: heat_pump
+      supply_registers: [parlor, hall, bedroom-front, kitchen, bedroom-back, sunroom]
+      returns: [hall]
+
+scenarios:
+  - id: air-seal
+    name: Air seal to 9 ACH50
+    changes:
+      - {op: set, path: air/infiltration/air_changes_per_hr_at_50pa, value: {value: 9, source: target after air sealing, confidence: estimated}}
+  - id: dense-pack-walls
+    name: Dense-pack cellulose in the wall cavities
+    changes:
+      # layers are numbered from 0; layer 1 of wall-balloon is the empty cavity
+      - op: set
+        path: assemblies/wall-balloon/layers/1
+        value: {name: Dense-pack cellulose, material: cellulose_dense_pack, thickness_in: 3.75, framing_material: softwood}
+  - id: insulate-floor
+    name: R-19 batts under the floor
+    changes:
+      - op: add
+        section: assemblies/floor-raised/layers
+        item: {name: R-19 batt between joists, r_value_hr_ft2_f_btu: 19, thickness_in: 6.25, framing_material: softwood}
+      - {op: set, path: assemblies/floor-raised/framing_frac, value: 0.1}
+  - id: storm-windows
+    name: Storm windows on the remaining single-pane windows
+    changes:
+      - {op: set, path: openings/parlor-south-windows/storm_window, value: clear}
+      - {op: set, path: openings/bedroom-front-south-windows/storm_window, value: clear}
+      - {op: set, path: openings/bedroom-front-east-windows/storm_window, value: clear}
+      - {op: set, path: openings/kitchen-north-windows/storm_window, value: clear}
+      - {op: set, path: openings/bedroom-back-east-windows/storm_window, value: clear}
+      - {op: set, path: openings/bedroom-back-north-window/storm_window, value: clear}
+  - id: everything
+    name: All four together
+    includes: [air-seal, dense-pack-walls, insulate-floor, storm-windows]
+    changes: []

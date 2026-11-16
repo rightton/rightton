@@ -1,0 +1,313 @@
+{
+  "format_version": "1.0.0",
+  "project": {
+    "name": "NREL base house",
+    "description": "NREL's OpenStudio-HPXML sample house base.xml (a synthetic test building, not a real home): 2,700 ft2 on two levels with a conditioned basement, Denver weather, gas furnace and central air conditioner with ducts in an unvented attic. Converted from the reference engine's defaulted input, so every value is written out and RightTon's design loads for this file equal the reference engine's.",
+    "created_with": "tools/convert_nrel_base.py"
+  },
+  "location": {
+    "weather_station_id": "725650",
+    "weather_station_name": "Denver Intl Ap",
+    "design_conditions": {
+      "heating_outdoor_temp_f": 6.8,
+      "cooling_outdoor_temp_f": 91.76,
+      "daily_temp_range": "high",
+      "humidity_difference_gr_lb": -28.8,
+      "latitude_deg": 39.83,
+      "elevation_ft": 5413.4,
+      "heating_setpoint_f": 70.0,
+      "cooling_setpoint_f": 75.0,
+      "cooling_indoor_humidity_frac": 0.45,
+      "ground_conductivity_btu_hr_ft_f": 0.8,
+      "cooling_outdoor_humidity_ratio_lb_lb": 0.0060541158233983665,
+      "annual_average_temp_f": 51.575616438356164,
+      "ground_temp_winter_f": 40.64045432632042,
+      "ground_temp_summer_f": 63.10975667174995,
+      "weather_shielding_factor": 0.59
+    }
+  },
+  "assemblies": [
+    {
+      "id": "wall-assembly-1",
+      "type": "wall",
+      "r_value_hr_ft2_f_btu": 22.7,
+      "construction": "wood_stud",
+      "cladding": "wood",
+      "solar_absorptance_frac": 0.7
+    },
+    {
+      "id": "wall-assembly-2",
+      "type": "wall",
+      "r_value_hr_ft2_f_btu": 4.0,
+      "construction": "wood_stud",
+      "cladding": "wood",
+      "solar_absorptance_frac": 0.7
+    },
+    {
+      "id": "wall-assembly-3",
+      "type": "wall",
+      "r_value_hr_ft2_f_btu": 13.9,
+      "construction": "wood_stud",
+      "cladding": "wood",
+      "solar_absorptance_frac": 0.7
+    },
+    {
+      "id": "roof-assembly-4",
+      "type": "roof",
+      "r_value_hr_ft2_f_btu": 2.3,
+      "roofing": "asphalt_shingles",
+      "roof_color": "light",
+      "radiant_barrier": false
+    },
+    {
+      "id": "ceiling-assembly-5",
+      "type": "ceiling",
+      "r_value_hr_ft2_f_btu": 39.6
+    }
+  ],
+  "zones": [
+    {
+      "id": "zone"
+    }
+  ],
+  "rooms": [
+    {
+      "id": "conditioned-space",
+      "name": "conditioned space",
+      "zone": "zone",
+      "floor_area_ft2": 1350.0,
+      "ceiling_height_ft": 8.0,
+      "occupant_count": 4.0,
+      "internal_sensible_gain_btu_hr": 2400.0,
+      "internal_latent_gain_btu_hr": 0.0
+    },
+    {
+      "id": "basement-conditioned",
+      "name": "basement - conditioned",
+      "zone": "zone",
+      "floor_area_ft2": 1350.0,
+      "ceiling_height_ft": 8.0,
+      "occupant_count": 0.0,
+      "internal_sensible_gain_btu_hr": 0.0,
+      "internal_latent_gain_btu_hr": 0.0,
+      "below_grade": true
+    }
+  ],
+  "spaces": [
+    {
+      "id": "attic-unvented",
+      "name": "attic - unvented",
+      "type": "unvented_attic",
+      "volume_ft3": 3696.958672875362
+    }
+  ],
+  "surfaces": [
+    {
+      "id": "wall1",
+      "type": "wall",
+      "inside": "conditioned-space",
+      "outside": "outdoors",
+      "area_ft2": 1200.0,
+      "assembly": "wall-assembly-1"
+    },
+    {
+      "id": "wall2",
+      "type": "wall",
+      "inside": "attic-unvented",
+      "outside": "outdoors",
+      "area_ft2": 225.0,
+      "assembly": "wall-assembly-2"
+    },
+    {
+      "id": "rimjoist1",
+      "type": "rim_joist",
+      "inside": "basement-conditioned",
+      "outside": "outdoors",
+      "area_ft2": 115.6,
+      "assembly": "wall-assembly-3"
+    },
+    {
+      "id": "foundationwall1",
+      "type": "foundation_wall",
+      "inside": "basement-conditioned",
+      "outside": "ground",
+      "area_ft2": 1200.0,
+      "height_ft": 8.0,
+      "depth_below_grade_ft": 7.0,
+      "thickness_in": 8.0,
+      "material": "solid_concrete",
+      "interior_insulation": {
+        "r_value_hr_ft2_f_btu": 0.0,
+        "distance_to_top_ft": 0.0,
+        "distance_to_bottom_ft": 8.0
+      },
+      "exterior_insulation": {
+        "r_value_hr_ft2_f_btu": 10.0,
+        "distance_to_top_ft": 0.0,
+        "distance_to_bottom_ft": 8.0
+      }
+    },
+    {
+      "id": "roof1",
+      "type": "roof",
+      "inside": "attic-unvented",
+      "area_ft2": 1509.3,
+      "assembly": "roof-assembly-4",
+      "pitch_rise_per_12": 6.0
+    },
+    {
+      "id": "floor1",
+      "type": "ceiling",
+      "inside": "conditioned-space",
+      "outside": "attic-unvented",
+      "area_ft2": 1350.0,
+      "assembly": "ceiling-assembly-5"
+    },
+    {
+      "id": "slab1",
+      "type": "slab",
+      "inside": "basement-conditioned",
+      "area_ft2": 1350.0,
+      "exposed_perimeter_ft": 150.0,
+      "thickness_in": 4.0
+    }
+  ],
+  "openings": [
+    {
+      "id": "window1",
+      "type": "window",
+      "surface": "wall1",
+      "area_ft2": 108.0,
+      "azimuth_deg": 0.0,
+      "u_factor_btu_hr_ft2_f": 0.35,
+      "shgc": 0.44,
+      "interior_shading": {
+        "type": "light_curtains",
+        "coverage_frac": 0.5,
+        "blinds_position": "closed"
+      },
+      "exterior_shading": {
+        "type": "other",
+        "coefficient_frac": 1.0
+      }
+    },
+    {
+      "id": "window2",
+      "type": "window",
+      "surface": "wall1",
+      "area_ft2": 72.0,
+      "azimuth_deg": 90.0,
+      "u_factor_btu_hr_ft2_f": 0.35,
+      "shgc": 0.44,
+      "interior_shading": {
+        "type": "light_curtains",
+        "coverage_frac": 0.5,
+        "blinds_position": "closed"
+      },
+      "exterior_shading": {
+        "type": "other",
+        "coefficient_frac": 1.0
+      }
+    },
+    {
+      "id": "window3",
+      "type": "window",
+      "surface": "wall1",
+      "area_ft2": 108.0,
+      "azimuth_deg": 180.0,
+      "u_factor_btu_hr_ft2_f": 0.35,
+      "shgc": 0.44,
+      "interior_shading": {
+        "type": "light_curtains",
+        "coverage_frac": 0.5,
+        "blinds_position": "closed"
+      },
+      "exterior_shading": {
+        "type": "other",
+        "coefficient_frac": 1.0
+      }
+    },
+    {
+      "id": "window4",
+      "type": "window",
+      "surface": "wall1",
+      "area_ft2": 72.0,
+      "azimuth_deg": 270.0,
+      "u_factor_btu_hr_ft2_f": 0.35,
+      "shgc": 0.44,
+      "interior_shading": {
+        "type": "light_curtains",
+        "coverage_frac": 0.5,
+        "blinds_position": "closed"
+      },
+      "exterior_shading": {
+        "type": "other",
+        "coefficient_frac": 1.0
+      }
+    },
+    {
+      "id": "door1",
+      "type": "door",
+      "surface": "wall1",
+      "area_ft2": 40.0,
+      "r_value_hr_ft2_f_btu": 4.4
+    }
+  ],
+  "air": {
+    "infiltration": {
+      "method": "blower_door",
+      "air_changes_per_hr_at_50pa": 3.0,
+      "height_ft": 9.75,
+      "volume_ft3": 21600.0,
+      "shielding_class": 4,
+      "stories_above_grade": 1.0,
+      "building_type": "detached"
+    },
+    "ducts": [
+      {
+        "id": "ducts-1",
+        "system": "system-1",
+        "supply_leakage_cfm_at_25pa": 81.0,
+        "return_leakage_cfm_at_25pa": 27.0,
+        "segments": [
+          {
+            "type": "supply",
+            "location": "attic-unvented",
+            "surface_area_ft2": 546.75,
+            "effective_r_value_hr_ft2_f_btu": 4.38
+          },
+          {
+            "type": "return",
+            "location": "attic-unvented",
+            "surface_area_ft2": 202.5,
+            "effective_r_value_hr_ft2_f_btu": 5.0
+          },
+          {
+            "type": "supply",
+            "location": "conditioned-space",
+            "surface_area_ft2": 182.25,
+            "effective_r_value_hr_ft2_f_btu": 1.7
+          },
+          {
+            "type": "return",
+            "location": "conditioned-space",
+            "surface_area_ft2": 67.5,
+            "effective_r_value_hr_ft2_f_btu": 1.7
+          }
+        ]
+      }
+    ]
+  },
+  "hvac": {
+    "systems": [
+      {
+        "id": "system-1",
+        "zone": "zone",
+        "heating": "furnace",
+        "cooling": "central_ac",
+        "heating_airflow_cfm_per_ton": 240.0,
+        "cooling_airflow_cfm_per_ton": 360.0
+      }
+    ]
+  }
+}
