@@ -48,7 +48,7 @@ def enclosure(root):
 
 def balloon_frame_walls(root):
     """Uninsulated balloon-frame walls: plaster on lath, empty cavity, board sheathing,
-    wood siding (R-4.7 with films, from RightTon's layer calculation), and bare rim joists."""
+    wood siding (about R-4.7 with films), and bare rim joists."""
     for wall in findall(enclosure(root), "Walls/Wall"):
         if text(wall, "InteriorAdjacentTo") == "conditioned space":
             set_text(wall, "Insulation/AssemblyEffectiveRValue", 4.7)

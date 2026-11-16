@@ -142,6 +142,8 @@ def test_data_files_carry_sources():
     assert every_default_has_a_source()
     for m in data.materials().values():
         assert m["source"] and m["confidence"] in ("default", "estimated")
+        # A value is "estimated" exactly when its source could not be confirmed
+        assert (m["confidence"] == "estimated") == ("[CONFIRM]" in m["source"]), m["id"]
         assert "r_per_inch_hr_ft2_f_btu_in" in m or "r_value_hr_ft2_f_btu" in m
     for g in data.glazing().values():
         assert g["source"] and 0 < g["shgc"] <= 1 and g["u_factor_btu_hr_ft2_f"] > 0
@@ -484,3 +486,23 @@ def test_known_station_values():
     # Denver Intl AP TMY3 header: 99 % heating -14.0 C = 6.8 F; 1 % cooling 33.2 C = 91.76 F
     denver = data.weather_stations()["725650"]
     assert (denver["heating_drybulb_f"], denver["cooling_drybulb_f"], denver["state"]) == (6.8, 91.76, "CO")
+
+
+def test_sourced_material_values():
+    """Unit conversions from the cited source values (see data/materials.json for the citations)."""
+    m = data.materials()
+    # Title 24 list gives conductivity k in Btu-in/h-ft2-F; R per inch = 1 / k
+    assert m["spray_foam_open_cell"]["r_per_inch_hr_ft2_f_btu_in"] == approx(1 / 0.3, rel=2e-3)        # 3.33
+    assert m["spray_foam_closed_cell"]["r_per_inch_hr_ft2_f_btu_in"] == approx(1 / 0.20004, rel=2e-3)  # 5.0
+    assert m["cellulose_dense_pack"]["r_per_inch_hr_ft2_f_btu_in"] == approx(1 / 0.3204, rel=2e-3)     # 3.12
+    assert m["polyiso_board"]["r_per_inch_hr_ft2_f_btu_in"] == approx(1 / 0.1704, rel=6e-3)            # 5.87 -> 5.9
+    assert m["xps_board"]["r_per_inch_hr_ft2_f_btu_in"] == approx(1 / 0.2, rel=2e-3)                   # 5.0
+    # ASHRAE dataset gives W/m-K: R per inch = 0.0254 m / k * 5.678 (hr-ft2-F/Btu per m2-K/W)
+    assert m["eps_board"]["r_per_inch_hr_ft2_f_btu_in"] == approx(0.0254 / 0.037 * 5.678, rel=3e-3)    # 3.90
+    # ... or a resistance in m2-K/W for a stated thickness: 1.94 * 5.678 = R-11.0
+    assert m["fiberglass_batt"]["r_per_inch_hr_ft2_f_btu_in"] == approx(1.94 * 5.678 / 3.5, rel=3e-3)  # 3.15 per inch in 3.5 in
+    assert m["fiberglass_loose_fill"]["r_per_inch_hr_ft2_f_btu_in"] == approx(1.94 * 5.678 / (112.5 / 25.4), rel=6e-3)  # 2.49
+    assert m["mineral_wool_batt"]["r_per_inch_hr_ft2_f_btu_in"] == approx(2.63 * 5.678 / (90 / 25.4), rel=4e-3)        # 4.21
+    assert m["wood_shingles_roof"]["r_value_hr_ft2_f_btu"] == approx(0.166 * 5.678, rel=4e-3)          # 0.94
+    # Plaster on wood lath = 5/8 in plaster at k 3.2004 + 1/4 in wood lath at k 0.8004: 0.195 + 0.312 = 0.51
+    assert m["plaster_on_wood_lath"]["r_value_hr_ft2_f_btu"] == approx(0.625 / 3.2004 + 0.25 / 0.8004, rel=6e-3)

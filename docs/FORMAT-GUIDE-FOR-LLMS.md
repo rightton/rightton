@@ -225,24 +225,24 @@ Paths: `air/infiltration/air_changes_per_hr_at_50pa`, `surfaces/north-wall/assem
 | Material id | What it is | R per inch | Fixed R | Typical thickness (in) |
 | --- | --- | --- | --- | --- |
 | `gypsum_board` | Gypsum board (drywall) | 0.9 |  | 0.5 |
-| `plaster_on_wood_lath` | Plaster on wood lath |  | 0.4 | 0.875 |
+| `plaster_on_wood_lath` | Plaster on wood lath |  | 0.51 | 0.875 |
 | `plaster_on_metal_lath` | Plaster on metal lath |  | 0.23 | 0.75 |
 | `wood_paneling` | Wood paneling or boards (interior) | 1.249 |  | 0.75 |
 | `softwood` | Softwood lumber, boards, plywood, OSB | 1.249 |  |  |
 | `board_sheathing` | Board sheathing (3/4 in, straight or diagonal) | 1.249 |  | 0.75 |
 | `air_space_closed` | Closed air space (empty framed cavity) |  | 1.0 |  |
-| `fiberglass_batt` | Fiberglass batt | 3.2 |  |  |
-| `mineral_wool_batt` | Mineral wool batt | 4.0 |  |  |
-| `cellulose_dense_pack` | Cellulose, dense-packed in a closed cavity | 3.6 |  |  |
+| `fiberglass_batt` | Fiberglass batt | 3.15 |  |  |
+| `mineral_wool_batt` | Mineral wool batt | 4.2 |  |  |
+| `cellulose_dense_pack` | Cellulose, dense-packed in a closed cavity | 3.12 |  |  |
 | `cellulose_loose_fill` | Cellulose, loose fill (attic floor) | 3.5 |  |  |
 | `fiberglass_loose_fill` | Fiberglass, loose fill (attic floor) | 2.5 |  |  |
 | `vermiculite` | Vermiculite, loose fill | 2.2 |  |  |
-| `spray_foam_closed_cell` | Spray polyurethane foam, closed cell | 6.0 |  |  |
-| `spray_foam_open_cell` | Spray polyurethane foam, open cell | 3.6 |  |  |
+| `spray_foam_closed_cell` | Spray polyurethane foam, closed cell | 5.0 |  |  |
+| `spray_foam_open_cell` | Spray polyurethane foam, open cell | 3.33 |  |  |
 | `rigid_foam_generic` | Rigid foam board (generic) | 4.9 |  |  |
 | `xps_board` | Extruded polystyrene (XPS) board | 5.0 |  |  |
-| `eps_board` | Expanded polystyrene (EPS) board | 4.0 |  |  |
-| `polyiso_board` | Polyisocyanurate board, foil faced | 6.0 |  |  |
+| `eps_board` | Expanded polystyrene (EPS) board | 3.9 |  |  |
+| `polyiso_board` | Polyisocyanurate board | 5.9 |  |  |
 | `wood_siding` | Wood siding or clapboard | 1.408 |  | 0.75 |
 | `vinyl_or_aluminum_siding` | Vinyl or aluminum siding (hollow backed) | 1.613 |  | 0.375 |
 | `fiber_cement_siding` | Fiber-cement siding | 0.559 |  | 0.375 |
@@ -255,7 +255,7 @@ Paths: `air/infiltration/air_changes_per_hr_at_50pa`, `surfaces/north-wall/assem
 | `concrete_block_hollow` | Concrete block, hollow core | 0.2 |  | 8.0 |
 | `straw_bale` | Straw bale | 2.4 |  |  |
 | `asphalt_shingles_on_deck` | Asphalt shingles | 0.887 |  | 0.25 |
-| `wood_shingles_roof` | Wood shingles or shakes | 1.408 |  | 0.5 |
+| `wood_shingles_roof` | Wood shingles or shakes |  | 0.94 | 0.75 |
 | `metal_roofing` | Metal roofing |  | 0.0 | 0.02 |
 | `carpet_and_pad` | Carpet with pad |  | 2.08 | 0.5 |
 | `hardwood_flooring` | Hardwood flooring | 1.249 |  | 0.75 |

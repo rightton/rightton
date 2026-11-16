@@ -59,12 +59,12 @@ def test_invalid_house_returns_issues_not_results():
 
 
 def test_assembly_layer_builder():
-    # Plaster on lath 0.40 + empty cavity 1.0 (framing 3.75 in softwood = 4.684) + board 0.937 + siding 1.056, films 0.89
-    # cavity path 4.283; framing path 7.967; U = 0.2 / 7.967 + 0.8 / 4.283 = 0.02510 + 0.18679 = 0.21189 -> R 4.72
+    # Plaster on lath 0.51 + empty cavity 1.0 (framing 3.75 in softwood = 4.684) + board 0.937 + siding 1.056, films 0.89
+    # cavity path 4.393; framing path 8.077; U = 0.2 / 8.077 + 0.8 / 4.393 = 0.02476 + 0.18211 = 0.20687 -> R 4.83
     house = housefile.load(EXAMPLES / "old-house.rtn.yaml")
     out = call("assembly", house["assemblies"][0])
-    assert out["ok"] and out["r_value"] == approx(4.72, rel=2e-3)
-    assert out["cavity_path_r"] == approx(4.28, rel=2e-3) and len(out["layers"]) == 4
+    assert out["ok"] and out["r_value"] == approx(4.83, rel=2e-3)
+    assert out["cavity_path_r"] == approx(4.39, rel=2e-3) and len(out["layers"]) == 4
     assert out["r_value_sheltered"] > out["r_value"]
     bad = call("assembly", {"id": "x", "type": "wall", "layers": [{"material": "nope"}]})
     assert bad["ok"] is False and "materials list" in bad["error"]

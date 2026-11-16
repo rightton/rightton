@@ -72,8 +72,8 @@ Two things these cases do **not** cover, because the reference has no equivalent
   The two descriptions give different answers by design; which one is right depends on whether the
   attic is really inside the air barrier.
 
-The assembly R-values in these cases were worked out by RightTon's layer builder and then given to both
-engines as numbers, so the layer builder itself is still checked only by hand calculation.
+The assembly R-values in these cases are round numbers close to what RightTon's layer builder gives for
+such constructions, given to both engines as numbers, so the layer builder itself is still checked only by hand calculation.
 
 ## What this comparison does and does not show
 

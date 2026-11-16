@@ -63,7 +63,7 @@ const check = (cond, what) => { console.log(`${cond ? "ok  " : "FAIL"} ${what}`)
   await page.click('nav >> text="Assemblies"');
   await page.locator(".row").first().click();
   await page.waitForSelector(".rbig");
-  check((await page.locator(".rbig").textContent()) === "R-4.7", "layer builder shows R-4.7 for the balloon-frame wall");
+  check((await page.locator(".rbig").textContent()) === "R-4.8", "layer builder shows R-4.8 for the balloon-frame wall");
 
   // Scenario view
   await page.click('nav >> text="Results"');
