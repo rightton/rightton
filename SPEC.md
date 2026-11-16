@@ -68,6 +68,40 @@ Every input has a visible default, a source note, and a confidence flag (measure
 
 **User data stays on the user's device.** Each project is saved only as a local file: no account, no server copy. The app opens with NREL's sample house, which the user edits or replaces.
 
+## House file format
+
+The house file is an open, fully specified format that any tool can write or edit: a CAD exporter, the RightTon web app, a script, or an LLM given the format guide and a description of a house. The format is a public contract, independent of the RightTon app.
+
+**Definition**
+
+- One data model, defined by a published, versioned [JSON Schema](https://json-schema.org) (a machine-readable definition that validators in every common language can check files against): `schema/rightton-house.schema.json`.
+- Every file declares `format_version` (semantic versioning). Readers accept older minor versions; breaking changes bump the major version and ship a converter.
+- Every field in the schema has a plain-English description, allowed values, and units. `docs/FORMAT.md` is the human reference and must agree with the schema (a test checks this).
+- `docs/FORMAT-GUIDE-FOR-LLMS.md`: a compact, self-contained authoring guide (data model, rules, worked example, common mistakes) that a person can paste into any LLM along with a description of their house to get a valid file.
+
+**Encoding**
+
+- JSON is canonical; the app always saves JSON.
+- YAML is accepted for hand authoring. It is the same data model, validated by the same schema; YAML ↔ JSON conversion is lossless.
+- File names: `*.rtn.json` / `*.rtn.yaml`.
+
+**Data model rules**
+
+- US units only in v1, and every quantity's unit is in its field name (`area_ft2`, `height_ft`, `r_value_hr_ft2_f_btu`, `u_factor_btu_hr_ft2_f`, `azimuth_deg`). No unitless numbers that could be read two ways.
+- Everything has an `id`; references are by id (a window names its wall, a wall names its room and its assembly). Assemblies are defined once in an `assemblies` library and reused by id.
+- Top-level sections: `format_version`, `project`, `location`, `assemblies`, `zones`, `rooms`, `spaces` (attic, crawlspace, garage, porch, conditioned-but-unoccupied spaces), `surfaces`, `openings`, `air` (infiltration, ventilation, ducts), `equipment` (heat-producing equipment such as dehumidifiers), `hvac` (systems, which rooms have supply registers and returns), `scenarios`, `extensions`.
+- Any numeric input may be a bare number or `{ "value": …, "source": "…", "confidence": "measured" | "estimated" | "default" }`. A bare number means `default`.
+- Geometry is optional: a surface needs an area, and may also carry a polygon outline (for CAD tools and future 3D views). The engine uses areas.
+- Scenarios are lists of changes against the baseline (`set` a field by id path, `add` or `remove` an item), so they stay small and readable.
+- `extensions`: tools store their own data under their own key (e.g. `extensions.my-cad-tool`); every reader must preserve extensions it does not understand when re-saving.
+- Location is a weather station identifier and optional design-condition overrides. There is no address field.
+
+**Tooling (in `core/`)**
+
+- `python -m rightton.validate house.rtn.json`: schema check plus checks the schema cannot express (references resolve, windows fit in their walls, every room belongs to a zone), with plain-English error messages that say where and how to fix.
+- Load → save round-trips without change.
+- `examples/`: NREL's base house converted to the format, and a fictional old house (balloon-frame walls, single-pane windows behind porches, a sunroom, raised floor over a vented crawlspace, conditioned attic with ducts) written for both YAML and JSON.
+
 ## Outputs
 
 The headline is three numbers per zone and room — sensible cooling, latent cooling, heating, in Btu/h — with the breakdown that explains them directly underneath.
@@ -111,6 +145,9 @@ core/            Python calculation engine + tests
 app/             TypeScript web interface (calls core via Pyodide)
 data/            materials, windows, weather stations (each value sourced)
 validation/      reference houses, comparison scripts, results
+schema/          house file JSON Schema
+docs/            format reference and LLM authoring guide
+examples/        example house files (fictional or NREL samples only)
 ```
 
 - **Core:** no screen code; testable and usable on its own.
@@ -131,6 +168,7 @@ RightTon never uses "Manual J" in its name or claims. Manual J is an ACCA tradem
 1. Calculation core (Python): rooms and zones, assemblies, windows, infiltration from ACH50, ducts, internal gains, latent load, zone-to-zone transfer.
 2. Test suite with hand-calculation checks.
 3. Reference comparison against OpenStudio-HPXML sample houses, results written to `validation/`.
-4. Minimal working interface: enter a zone, see results and breakdown.
-5. Scenario comparison.
-6. Printable report, expanded old-house material library, DXF import.
+4. House file format: schema, docs, LLM guide, validator, examples (see House file format).
+5. Old-house stress cases built in both engines and compared; RightTon's own defaults with sources.
+6. Web interface, polished: house editor (rooms, assemblies, surfaces, openings), results with component breakdown, scenario comparison, save/open house files.
+7. Printable report, expanded old-house material library, DXF import.
