@@ -167,6 +167,7 @@ details[open] > summary { margin-bottom: .6rem; }
 table.data { width: 100%; border-collapse: collapse; font-size: .88rem; font-variant-numeric: tabular-nums; }
 table.data th { text-align: left; font-size: .76rem; color: var(--muted); font-weight: 650; padding: .35rem .5rem; border-bottom: 1px solid var(--line-strong); white-space: nowrap; }
 table.data td { padding: .42rem .5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.data td:first-child { min-width: 9.5rem; }
 table.data .n { text-align: right; white-space: nowrap; } table.data tbody tr[tabindex] { cursor: pointer; }
 table.data tbody tr[tabindex]:hover, table.data tr.selected { background: var(--surface-2); }
 table.data tfoot td { font-weight: 700; border-bottom: 0; border-top: 2px solid var(--line-strong); } table.compact td { padding: .3rem .5rem; }
@@ -195,7 +196,7 @@ ul.plain { margin: 0 0 .5rem; padding-left: 1.1rem; } ul.plain li { margin-botto
 @media (max-width: 560px) {
   body { font-size: 15px; }
   .brand-name { display: none; } .top { gap: .4rem; padding: .5rem .6rem; } .top-actions .icon-btn { display: none; }
-  .headline { grid-template-columns: minmax(0, 1fr); } .stat-value { font-size: 1.7rem; }
+  .headline { gap: .5rem; } .stat { padding: .6rem .7rem; } .stat-value { font-size: 1.45rem; } .stat-label { font-size: .74rem; }
   .fields { grid-template-columns: minmax(0, 1fr); }
   .layer-fields { grid-template-columns: 1fr 1fr; } .layer-fields label:first-child, .layer-fields .check { grid-column: 1 / -1; }
   .layer-top { grid-template-columns: auto 1fr auto; } .layer-top select { grid-column: 1 / -1; grid-row: 2; }
