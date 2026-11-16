@@ -24,6 +24,13 @@ const check = (cond, what) => { console.log(`${cond ? "ok  " : "FAIL"} ${what}`)
   await settled(page);
   check((await heating(page)) === 41543, "opens with the NREL base house: heating 41,543 Btu/h (the reference engine's value)");
 
+  // Input confidence: a load range appears after the main result
+  await page.waitForSelector(".stat-range", { timeout: 120000 });
+  const range = await page.locator(".stat.heat .stat-range").textContent();
+  const [lo, hi] = range.replace(/,/g, "").match(/[\d.]+/g).map(Number);
+  check(lo < 41543 && hi > 41543, `heating load range is shown around the result (${range})`);
+  check((await page.locator("table.ranges tbody tr").count()) === 10, "the ten most influential unmeasured inputs are listed");
+
   // Edit the blower-door number and see the load move
   await page.click('nav >> text="Air & ducts"');
   const ach = page.locator('.field:has(label:text-is("ACH50 (air changes per hour at 50 Pa)")) input[type="text"]').first();

@@ -1,5 +1,5 @@
 // Client for the Python core running in a web worker.
-import type { CalcOutput, Library } from "./types";
+import type { CalcOutput, Library, Ranges } from "./types";
 
 type Pending = { resolve: (v: unknown) => void; reject: (e: Error) => void };
 
@@ -42,6 +42,7 @@ class Engine {
 
   library = () => this.call<Library>("library", {});
   calculate = (house: unknown) => this.call<CalcOutput>("calculate", house);
+  sensitivity = (house: unknown) => this.call<Ranges>("sensitivity", house);
   assembly = (asm: unknown) => this.call<AssemblyResult>("assembly", asm);
   epw = (text: string) => this.call<{ weather_station_name: string; design_conditions: Record<string, unknown> }>("design_conditions_from_epw", text);
 }

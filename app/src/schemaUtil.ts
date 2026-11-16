@@ -56,7 +56,8 @@ const UNIT_SUFFIXES = ["_hr_ft2_f_btu_in", "_hr_ft2_f_btu", "_btu_hr_ft2_f", "_b
   "_cfm_at_50pa", "_cfm_at_25pa", "_per_hr_at_50pa", "_per_hr", "_per_floor_area_frac", "_rise_per_12", "_gr_lb", "_lb_lb",
   "_ft2", "_ft3", "_in2", "_ft", "_in", "_frac", "_deg", "_cfm", "_pa", "_usd", "_hr", "_f"];
 const SPECIAL: Record<string, string> = {
-  shgc: "SHGC (solar heat gain coefficient)", u_factor_btu_hr_ft2_f: "U-factor", r_value_hr_ft2_f_btu: "R-value",
+  shgc: "SHGC (solar heat gain coefficient)", effective_r_value_hr_ft2_f_btu: "Duct effective R-value",
+  insulation_r_value_hr_ft2_f_btu: "Duct insulation R-value", surface_area_ft2: "Duct surface area", u_factor_btu_hr_ft2_f: "U-factor", r_value_hr_ft2_f_btu: "R-value",
   air_changes_per_hr_at_50pa: "ACH50 (air changes per hour at 50 Pa)", airflow_cfm_at_50pa: "CFM50 (airflow at 50 Pa)",
   id: "Id", hvac: "HVAC", pitch_rise_per_12: "Roof pitch (rise per 12)", framing_frac: "Framing share of area",
   heating_outdoor_temp_f: "Heating design temperature (outdoor)", cooling_outdoor_temp_f: "Cooling design temperature (outdoor)",

@@ -42,3 +42,9 @@ export type Issue = { level: "error" | "warning"; where: string; message: string
 export type ScenarioResult = { id: string; name: string; description: string; cost_usd: number | null; result?: Result; error?: string };
 export type CalcOutput = { valid: boolean; issues: Issue[]; baseline: Result | null; scenarios: ScenarioResult[];
   stated_inputs: { path: string; value: number; source: string; confidence: string }[] };
+
+export type RangeMetrics = { heating_btuh: number; cooling_sensible_btuh: number; cooling_latent_btuh: number; cooling_total_btuh: number };
+export type RangeItem = { where: string; field: string; value: number; low: number | null; high: number | null; confidence: string;
+  source: string; range_basis: string; impact_btuh: number; loads: { low?: Record<string, RangeMetrics>; high?: Record<string, RangeMetrics> } };
+export type Ranges = { base: Record<string, RangeMetrics>; items: RangeItem[]; varied: number; not_calculable: number; method: string;
+  combined: Record<string, Record<keyof RangeMetrics, { base: number; low: number; high: number }>> };

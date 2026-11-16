@@ -1,8 +1,8 @@
 // Results: headline loads, ranked component breakdown, room-by-room view, sizing
 // guidance, input confidence. Every number shown comes from the Python core.
 import { useState } from "react";
-import { fmt, pretty } from "../schemaUtil";
-import type { CalcOutput, Component, Loads, Result } from "../types";
+import { fmt, humanize, pretty } from "../schemaUtil";
+import type { CalcOutput, Component, Loads, RangeItem, Ranges, Result } from "../types";
 
 type Mode = "heating" | "sensible" | "latent";
 const MODES: { key: Mode; label: string; unit: string }[] = [
@@ -34,16 +34,19 @@ export function Bars({ items, compare, compareLabel }: { items: Component[]; com
   );
 }
 
-function Headline({ r, base }: { r: Result; base?: Result }) {
+function Headline({ r, base, ranges }: { r: Result; base?: Result; ranges?: Ranges | null }) {
   const b = r.building;
+  const c = !base && ranges ? ranges.combined.building : null;
+  const likely = (m: "heating_btuh" | "cooling_sensible_btuh" | "cooling_latent_btuh" | "cooling_total_btuh", perTon = false) => c
+    ? <span className="stat-range" title="Range from inputs that were not measured; see “How sure is this answer?” below">likely {fmt(c[m].low / (perTon ? 12000 : 1), perTon ? 1 : 0)} – {fmt(c[m].high / (perTon ? 12000 : 1), perTon ? 1 : 0)}</span> : null;
   const d = (now: number, was?: number) => was === undefined || Math.abs(now - was) < 0.5 ? null
     : <span className={`delta ${now < was ? "good" : "bad"}`}>{now < was ? "−" : "+"}{fmt(Math.abs(now - was))} ({fmt(Math.abs((now - was) / (was || 1)) * 100)}%)</span>;
   return (
     <div className="headline">
-      <div className="stat heat"><span className="stat-label">Heating load</span><span className="stat-value">{fmt(b.heating_btuh)}</span><span className="stat-unit">Btu/h</span>{d(b.heating_btuh, base?.building.heating_btuh)}</div>
-      <div className="stat cool"><span className="stat-label">Cooling: temperature (sensible)</span><span className="stat-value">{fmt(b.cooling_sensible_btuh)}</span><span className="stat-unit">Btu/h</span>{d(b.cooling_sensible_btuh, base?.building.cooling_sensible_btuh)}</div>
-      <div className="stat wet"><span className="stat-label">Cooling: moisture (latent)</span><span className="stat-value">{fmt(b.cooling_latent_btuh)}</span><span className="stat-unit">Btu/h</span>{d(b.cooling_latent_btuh, base?.building.cooling_latent_btuh)}</div>
-      <div className="stat"><span className="stat-label">Total cooling</span><span className="stat-value">{fmt(b.cooling_tons, 2)}</span><span className="stat-unit">tons ({fmt(b.cooling_total_btuh)} Btu/h)</span>
+      <div className="stat heat"><span className="stat-label">Heating load</span><span className="stat-value">{fmt(b.heating_btuh)}</span><span className="stat-unit">Btu/h</span>{d(b.heating_btuh, base?.building.heating_btuh)}{likely("heating_btuh")}</div>
+      <div className="stat cool"><span className="stat-label">Cooling: temperature (sensible)</span><span className="stat-value">{fmt(b.cooling_sensible_btuh)}</span><span className="stat-unit">Btu/h</span>{d(b.cooling_sensible_btuh, base?.building.cooling_sensible_btuh)}{likely("cooling_sensible_btuh")}</div>
+      <div className="stat wet"><span className="stat-label">Cooling: moisture (latent)</span><span className="stat-value">{fmt(b.cooling_latent_btuh)}</span><span className="stat-unit">Btu/h</span>{d(b.cooling_latent_btuh, base?.building.cooling_latent_btuh)}{likely("cooling_latent_btuh")}</div>
+      <div className="stat"><span className="stat-label">Total cooling</span><span className="stat-value">{fmt(b.cooling_tons, 2)}</span><span className="stat-unit">tons ({fmt(b.cooling_total_btuh)} Btu/h)</span>{likely("cooling_total_btuh", true)}
         <span className="stat-note">{fmt(b.sensible_heat_ratio * 100)}% of it is temperature, {fmt((1 - b.sensible_heat_ratio) * 100)}% moisture</span></div>
     </div>
   );
@@ -172,7 +175,65 @@ function Confidence({ out, r }: { out: CalcOutput; r: Result }) {
   );
 }
 
-export function ResultsView({ out, busy }: { out: CalcOutput | null; busy: boolean }) {
+const FIELD_LABELS: Record<string, string> = {
+  no_interior_shading: "No blinds or curtains described (tested with shades drawn)", shielding_class: "Wind shielding class",
+  occupant_count: "Number of occupants",
+};
+const fieldLabel = (f: string) => FIELD_LABELS[f] ?? (/^layer /.test(f) ? f.charAt(0).toUpperCase() + f.slice(1) : humanize(f));
+const short = (n: number | null) => (n === null ? "" : Math.abs(n) >= 100 ? fmt(n) : String(Number(n.toPrecision(3))));
+
+function RangeCard({ ranges, r }: { ranges: Ranges | null; r: Result }) {
+  const [scope, setScope] = useState("building");
+  const [all, setAll] = useState(false);
+  if (!ranges) return <div className="card"><h3>How sure is this answer?</h3><p className="muted"><span className="spinner" /> Working out how far the loads move if the unmeasured inputs are off…</p></div>;
+  const sc = ranges.combined[scope] ? scope : "building";
+  const c = ranges.combined[sc], base = ranges.base[sc];
+  const delta = (item: RangeItem, m: "heating_btuh" | "cooling_total_btuh") => {
+    const vals = [item.loads.low?.[sc]?.[m], item.loads.high?.[sc]?.[m]].filter((v): v is number => v !== undefined).map((v) => v - base[m]);
+    return { lo: Math.min(0, ...vals), hi: Math.max(0, ...vals) };
+  };
+  const items = ranges.items.map((i) => ({ i, h: delta(i, "heating_btuh"), k: delta(i, "cooling_total_btuh") }))
+    .sort((a, b) => Math.max(b.h.hi - b.h.lo, b.k.hi - b.k.lo) - Math.max(a.h.hi - a.h.lo, a.k.hi - a.k.lo));
+  const shown = all ? items : items.slice(0, 10);
+  const max = Math.max(1, ...items.flatMap((x) => [x.h.hi, -x.h.lo, x.k.hi, -x.k.lo]));
+  const bar = (d: { lo: number; hi: number }, cls: string) => (
+    <div className="tornado" title={`${fmt(d.lo)} to +${fmt(d.hi)} Btu/h`}>
+      <div className="tornado-half left"><div className={`tornado-bar ${cls}`} style={{ width: `${(-d.lo / max) * 100}%` }} /></div>
+      <div className="tornado-half"><div className={`tornado-bar ${cls}`} style={{ width: `${(d.hi / max) * 100}%` }} /></div>
+    </div>
+  );
+  const pm = (d: { lo: number; hi: number }) => <span className="pm">{d.lo < -0.5 ? `−${fmt(-d.lo)}` : "0"} / {d.hi > 0.5 ? `+${fmt(d.hi)}` : "0"}</span>;
+  const line = (label: string, m: "heating_btuh" | "cooling_sensible_btuh" | "cooling_latent_btuh" | "cooling_total_btuh") =>
+    <li><strong>{label}:</strong> {fmt(c[m].base)} Btu/h, likely between <strong>{fmt(c[m].low)}</strong> and <strong>{fmt(c[m].high)}</strong>{m === "cooling_total_btuh" && <> ({fmt(c[m].low / 12000, 1)} to {fmt(c[m].high / 12000, 1)} tons)</>}</li>;
+  return (
+    <div className="card">
+      <div className="card-head"><h3>How sure is this answer?</h3>
+        {r.zones.length > 1 && <div className="seg"><button className={sc === "building" ? "on" : ""} onClick={() => setScope("building")}>Whole house</button>
+          {r.zones.map((z) => <button key={z.id} className={sc === `zone:${z.id}` ? "on" : ""} onClick={() => setScope(`zone:${z.id}`)}>{z.name}</button>)}</div>}
+      </div>
+      <p className="muted">{ranges.varied} inputs were not measured (estimates, plain entries and RightTon’s defaults). Each was moved to the low and high end of a plausible range, one at a time, and the house recalculated.</p>
+      <ul className="plain">{line("Heating", "heating_btuh")}{line("Cooling, temperature", "cooling_sensible_btuh")}{line("Cooling, moisture", "cooling_latent_btuh")}{line("Total cooling", "cooling_total_btuh")}</ul>
+      <h4>What moves the answer most</h4>
+      <p className="help">Change in load (Btu/h) when each input alone goes to its low or high test value. Measure the ones at the top first: marking an input “measured” removes it from this list and narrows the range.</p>
+      <div className="table-wrap">
+        <table className="data ranges">
+          <thead><tr><th>Input</th><th>Entered</th><th>Tested</th><th className="heat-text">Heating</th><th className="cool-text">Total cooling</th></tr></thead>
+          <tbody>{shown.map(({ i, h, k }, n) => (
+            <tr key={n}>
+              <td><strong>{fieldLabel(i.field)}</strong><br /><span className="muted small">{i.where.replace(/^([a-z /]+): /, "")} · <span className={`pill ${i.confidence}`}>{i.confidence === "default" ? (i.where === "RightTon default" ? "default" : "not noted") : i.confidence}</span></span></td>
+              <td className="n">{short(i.value)}</td>
+              <td className="n">{[i.low, i.high].filter((v) => v !== null).map(short).join(" – ")}</td>
+              <td>{bar(h, "heat")}{pm(h)}</td><td>{bar(k, "cool")}{pm(k)}</td>
+            </tr>))}</tbody>
+        </table>
+      </div>
+      {items.length > 10 && <button className="btn small" onClick={() => setAll(!all)}>{all ? "Show the top 10 only" : `Show all ${items.length}`}</button>}
+      <p className="help">{ranges.method} Compass directions are treated as known.{ranges.not_calculable > 0 && ` ${ranges.not_calculable} test values could not be calculated and were left out.`}</p>
+    </div>
+  );
+}
+
+export function ResultsView({ out, busy, ranges }: { out: CalcOutput | null; busy: boolean; ranges: Ranges | null }) {
   const [mode, setMode] = useState<Mode>("heating");
   const [scenario, setScenario] = useState<string | null>(null);
   if (!out) return <div className="card"><p className="muted">{busy ? "Starting the calculation engine (this takes a few seconds the first time)…" : "No results yet."}</p></div>;
@@ -190,7 +251,7 @@ export function ResultsView({ out, busy }: { out: CalcOutput | null; busy: boole
             <option value="">Baseline (the house as it is)</option>{out.scenarios.filter((s) => s.result).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>{picked && <span className="muted">changes shown against the baseline</span>}</div>
       )}
-      <Headline r={r} base={picked ? out.baseline : undefined} />
+      <Headline r={r} base={picked ? out.baseline : undefined} ranges={ranges} />
       <div className="card">
         <div className="card-head"><h3>Where the load comes from</h3>
           <div className="seg">{MODES.map((m) => <button key={m.key} className={mode === m.key ? "on" : ""} onClick={() => setMode(m.key)}>{m.label}</button>)}</div></div>
@@ -200,6 +261,7 @@ export function ResultsView({ out, busy }: { out: CalcOutput | null; busy: boole
       <Scenarios out={out} pick={setScenario} />
       <Rooms r={r} />
       <Guidance r={r} />
+      {!picked && <RangeCard ranges={ranges} r={r} />}
       <Confidence out={out} r={r} />
     </div>
   );

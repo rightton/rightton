@@ -157,6 +157,7 @@ details[open] > summary { margin-bottom: .6rem; }
 .stat.heat { border-top-color: var(--heat); } .stat.cool { border-top-color: var(--cool); } .stat.wet { border-top-color: var(--wet); }
 .stat-label { font-size: .8rem; color: var(--muted); font-weight: 600; } .stat-value { font-size: 1.9rem; font-weight: 750; letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1.15; }
 .stat-unit, .stat-note { font-size: .8rem; color: var(--muted); }
+.stat-range { font-size: .78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .delta { font-size: .8rem; font-weight: 650; font-variant-numeric: tabular-nums; } .delta.good { color: var(--good); } .delta.bad { color: var(--bad); }
 .bars { list-style: none; margin: .4rem 0 0; padding: 0; display: grid; gap: .55rem; }
 .bar-label { display: flex; justify-content: space-between; gap: 1rem; font-size: .88rem; } .bar-value { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
@@ -180,6 +181,13 @@ ul.plain { margin: 0 0 .5rem; padding-left: 1.1rem; } ul.plain li { margin-botto
 .issues li.error { border-left-color: var(--bad); } .issues .pill { margin-right: .5rem; } .issues strong { margin-right: .3rem; }
 .json { font-family: var(--mono); font-size: .78rem; background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: .7rem; overflow: auto; max-height: 420px; }
 .tabs { margin-bottom: .2rem; }
+.tornado { display: grid; grid-template-columns: 1fr 1fr; min-width: 110px; height: 9px; background: var(--surface-2); border-radius: 5px; }
+.tornado-half { display: flex; border-left: 1px solid var(--line-strong); } .tornado-half.left { justify-content: flex-end; border-left: 0; }
+.tornado-bar { height: 100%; border-radius: 2px; } .tornado-bar.heat { background: var(--heat); } .tornado-bar.cool { background: var(--cool); }
+.pm { font-size: .76rem; color: var(--muted); white-space: nowrap; }
+table.ranges td { vertical-align: middle; }
+.spinner { display: inline-block; width: .8rem; height: .8rem; border: 2px solid var(--line-strong); border-top-color: var(--brand); border-radius: 50%; animation: spin .8s linear infinite; vertical-align: -1px; margin-right: .3rem; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* Tablet and phone */
 @media (max-width: 960px) {

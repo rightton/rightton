@@ -8,7 +8,7 @@ import { SectionEditor, type SectionProps } from "./components/SectionEditor";
 import { engine } from "./engine";
 import { fmt, itemSchema, num, pretty, resolve, schemaAt, setRootSchema, slug } from "./schemaUtil";
 import { emptyHouse, getIn, list, renameId, useHouse } from "./state";
-import type { CalcOutput, House, Json, Library, Obj, Schema } from "./types";
+import type { CalcOutput, House, Json, Library, Obj, Ranges, Schema } from "./types";
 
 type Page = "results" | "location" | "rooms" | "assemblies" | "surfaces" | "openings" | "air" | "hvac" | "scenarios" | "issues";
 const PAGES: { key: Page; label: string }[] = [
@@ -38,6 +38,7 @@ export function App() {
   const [lib, setLib] = useState<Library | null>(null);
   const [engineError, setEngineError] = useState<string | null>(null);
   const [out, setOut] = useState<CalcOutput | null>(null);
+  const [ranges, setRanges] = useState<Ranges | null>(null);
   const [busy, setBusy] = useState(true);
   const [page, setPage] = useState<Page>("results");
   const [sub, setSub] = useState<Record<string, string>>({ rooms: "rooms", air: "leakage", hvac: "systems" });
@@ -68,7 +69,12 @@ export function App() {
     const id = ++run.current;
     setBusy(true);
     const timer = setTimeout(() => {
-      engine.calculate(house).then((o) => { if (run.current === id) { setOut(o); setBusy(false); } })
+      engine.calculate(house).then((o) => {
+        if (run.current !== id) return;
+        setOut(o); setBusy(false); setRanges(null);
+        // Input-confidence ranges take a few seconds (a recalculation per input), so they follow the main result.
+        if (o.baseline) engine.sensitivity(house).then((r) => { if (run.current === id) setRanges(r); }).catch(() => undefined);
+      })
         .catch((e) => { if (run.current === id) { setBusy(false); setNotice(`Calculation failed: ${e.message}`); } });
     }, 350);
     return () => clearTimeout(timer);
@@ -144,7 +150,7 @@ export function App() {
       <main className="main">
         {notice && <div className="notice" role="status">{notice}<button className="icon" aria-label="Dismiss" onClick={() => setNotice(null)}>×</button></div>}
         {engineError && <div className="card"><h3>The calculation engine could not start</h3><p>{engineError}</p><p className="muted">RightTon runs its calculations in your browser using WebAssembly. Try a current version of Chrome, Edge, Firefox or Safari.</p></div>}
-        {page === "results" && <ResultsView out={out} busy={busy || !lib} />}
+        {page === "results" && <ResultsView out={out} busy={busy || !lib} ranges={ranges} />}
         {ctx && lib && page !== "results" && <Editors page={page} ctx={ctx} lib={lib} out={out} sub={sub} setSub={(k, v) => setSub({ ...sub, [k]: v })} doc={doc} pickEpw={() => epwInput.current?.click()} go={setPage} />}
         <footer className="foot">
           <p><strong>A homeowner planning estimate, not a design for permits or rebates.</strong> Where those require an ACCA-approved load calculation, a contractor must provide one. RightTon is a residential heating and cooling load calculator based on published open methods; its calculation is checked against NREL’s OpenStudio-HPXML.</p>

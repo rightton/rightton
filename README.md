@@ -17,7 +17,7 @@ RightTon is a free, open-source residential heating and cooling load calculator 
 | [`schema/`](schema), [`docs/FORMAT.md`](docs/FORMAT.md) | The house file format (`*.rtn.json`, `*.rtn.yaml`): an open, versioned format any tool can write. |
 | [`docs/FORMAT-GUIDE-FOR-LLMS.md`](docs/FORMAT-GUIDE-FOR-LLMS.md) | Paste this into any language model with a description of your house to get a house file. [How it was tested](docs/LLM-GUIDE-TEST.md). |
 | [`examples/`](examples) | Example house files: NREL's base house and two fictional old houses. |
-| [`data/`](data) | Materials, glazing presets, weather stations and defaults, each value with its source. |
+| [`data/`](data) | Materials, glazing presets, 1,018 U.S. weather stations ([list](docs/WEATHER-STATIONS.md)) and defaults, each value with its source. |
 | [`validation/`](validation) | Comparison against NREL's OpenStudio-HPXML: [results](validation/RESULTS.md). |
 
 ## Checking a house file

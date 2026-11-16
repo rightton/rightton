@@ -1,6 +1,6 @@
 # Next steps
 
-State on 2026-11-16: SPEC.md build priorities 1 to 6 are built. `python -m pytest core` (256 tests),
+State on 2026-11-16: SPEC.md build priorities 1 to 6 are built. `python -m pytest core` (268 tests),
 `python validation/compare.py` (129 snapshot houses, all pass) and the browser end-to-end test
 (`app/tests/e2e.cjs`) pass locally.
 
@@ -16,20 +16,37 @@ State on 2026-11-16: SPEC.md build priorities 1 to 6 are built. `python -m pytes
 
 ### Things that affect answers
 
-- **Materials still marked [CONFIRM].** 14 entries in `data/materials.json` (plaster on lath, batts, loose
-  fill, spray foam, XPS/EPS/polyiso, wood shingles) are typical values from memory, flagged `estimated`
-  in the file and in the app. Tie each to a citable open source or replace it.
-- **Weather stations: 22 only** (`data/weather_stations.json`, the EPW files shipped with the reference
-  engine). Anywhere else needs an EPW file loaded in the app. Build a larger table with
-  `tools/build_weather_stations.py` from an open EPW collection.
+Done on 2026-11-16 (see the commits and `data/README.md`): the U.S. TMY3 weather-station table (1,018
+stations), sourced material values (12 of 14), the roof interior air film by pitch, and input-confidence
+load ranges in the core and the results view. What is left in this group:
+
+- **TMYx stations are not in the weather table.** The work item asked for TMYx where TMY3 is missing;
+  TMYx is published at climate.onebuilding.org, which the build environment could not reach. Run
+  `tools/build_weather_stations.py` on a folder that also holds the TMYx EPW files. [CONFIRM] which
+  locations that adds.
+- **153 of the 1,018 stations have design temperatures derived from the typical-year hourly data**
+  because their EPW file has no ASHRAE design-conditions header (each entry's `design_source` says so).
+  Replace them with ASHRAE design values where an open source for those exists.
+- **Two material values are still estimates**: loose-fill cellulose and vermiculite (`data/materials.json`,
+  marked [CONFIRM]). No source for them could be reached (only GitHub was reachable; energy.gov, ornl.gov
+  and similar are blocked there). Any citable open document that lists them will do.
+- **The input-confidence ranges are RightTon's judgment** (`data/input_ranges.json`, marked [CONFIRM]):
+  how far to move each kind of unmeasured input is not from a published source. Have someone with field
+  experience review them. Compass directions are treated as known. Values taken from RightTon's lists
+  (glazing presets, material R-values) and nine of the defaults are varied; other defaults (stories,
+  duct area rules, vent areas, space heights) are not.
+- **The combined range adds effects in quadrature**, as if inputs were independent. It is an indication,
+  not a statistical interval, and inputs that move together (all wall areas from one tape measure) will be
+  understated.
 - **The layer builder is still validated by hand calculation only** (the reference takes finished
-  R-values). Roof interior air film by pitch is a [CONFIRM] in `core/rightton/assemblies.py`.
+  R-values).
 - **RightTon-only features have no reference to compare with**: porch as a space, windows facing a
   space, sealed attic as conditioned space, zone-to-zone transfer, equipment heat line, user infiltration
-  shares. All are hand-calculation tested; see validation/RESULTS.md.
+  shares, input-confidence ranges. All are hand-calculation tested; see validation/RESULTS.md.
 - **Not ported from the reference**: ERV/HRV rated-efficiency conversion (effectiveness is entered
-  directly), ventilation through the air handler (CFIS), two heating or two cooling systems in one
-  zone, systems serving part of a zone, evaporative coolers, tabulated default duct loads.
+  directly; [CONFIRM] in `core/rightton/airflow.py`), ventilation through the air handler (CFIS), two
+  heating or two cooling systems in one zone, systems serving part of a zone, evaporative coolers,
+  tabulated default duct loads.
 - **Supply registers and returns are recorded but not used**: room airflow (cfm per room) is not
   calculated yet (SPEC "Later"). The checker only warns about rooms with no register.
 
@@ -47,11 +64,10 @@ State on 2026-11-16: SPEC.md build priorities 1 to 6 are built. `python -m pytes
 - No printable report yet (priority 7); the page has basic print styles only.
 - Scenario changes are edited as path/value rows. Friendlier pickers ("replace this assembly",
   "add storm windows to these openings") would help homeowners.
-- "How much the answer moves if each default changes" (SPEC input confidence, shown as a load range) is
-  not built; the app lists which inputs are defaults, estimates or measurements.
+- The input-confidence card shows ranges for the baseline only, not for each scenario.
 - No floor-plan or DXF import (priority 7). `outline_ft` is carried in the format but unused.
 - Accessibility has had no audit beyond keyboard focus styles and labels. [CONFIRM] with a screen reader.
-- The first load downloads about 14 MB (the Python runtime); it is cached afterwards. No offline
+- The first load downloads about 15 MB (the Python runtime); it is cached afterwards. No offline
   (service worker) support yet.
 - End-to-end test covers one desktop and one phone viewport in Chromium only. [CONFIRM] Safari and Firefox.
 
