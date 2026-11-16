@@ -50,7 +50,8 @@ def messages(house):
 
 # --- Files ---------------------------------------------------------------------------
 
-@pytest.mark.parametrize("name", ["nrel-base-house.rtn.json", "old-house.rtn.json", "old-house.rtn.yaml"])
+@pytest.mark.parametrize("name", ["nrel-base-house.rtn.json", "old-house.rtn.json", "old-house.rtn.yaml",
+                                  "llm-written-brick-bungalow.rtn.yaml"])
 def test_examples_are_valid(name):
     assert not errors(housefile.load(EXAMPLES / name))
 
@@ -435,3 +436,13 @@ def test_nrel_example_reproduces_reference_loads():
     loads = calculate(conv.building).building
     assert (round(loads.heat_total), round(loads.cool_sensible), round(loads.cool_latent)) == (41543, 27993, 265)
     assert conv.defaults_used == []   # every value is written out in that file
+
+
+def test_house_written_by_a_language_model_from_the_guide_alone():
+    """docs/LLM-GUIDE-TEST.md: a model given only the guide and a prose description wrote this file.
+    It must stay valid, with no warnings, and its scenarios must calculate."""
+    house = housefile.load(EXAMPLES / "llm-written-brick-bungalow.rtn.yaml")
+    assert not validate.validate(house)
+    base = calculate(housefile.to_building(house).building).building.heat_total
+    for scenario in house["scenarios"]:
+        assert calculate(housefile.to_building(house, scenario["id"]).building).building.heat_total < base

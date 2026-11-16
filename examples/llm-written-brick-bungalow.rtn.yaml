@@ -1,0 +1,172 @@
+format_version: 1.0.0
+project:
+  name: Fictional 1930s brick bungalow
+  description: One-story solid-brick bungalow, vented unfinished attic, unconditioned basement. Fictional house.
+  bedroom_count: 2
+location:
+  weather_station_id: "724060"
+assemblies:
+  - id: wall-brick
+    type: wall
+    construction: brick
+    cladding: brick
+    solar_absorptance_frac: 0.9
+    layers:
+      - {material: plaster_on_wood_lath}
+      - {material: air_space_closed, name: 3/4 in furred air gap}
+      - {material: brick, name: Two wythes of brick, thickness_in: 8}
+  - id: ceiling-old
+    type: ceiling
+    layers:
+      - {material: plaster_on_wood_lath}
+      - {material: fiberglass_loose_fill, thickness_in: 6}
+  - id: attic-roof
+    type: roof
+    roofing: asphalt_shingles
+    roof_color: dark
+    layers:
+      - {material: board_sheathing}
+      - {material: asphalt_shingles_on_deck}
+  - id: floor-over-basement
+    type: floor
+    layers:
+      - {material: hardwood_flooring}
+      - {material: board_sheathing, name: Board subfloor}
+zones:
+  - {id: house}
+rooms:
+  - {id: living, name: Living room, zone: house, floor_area_ft2: 392, ceiling_height_ft: 9}
+  - {id: kitchen, name: Kitchen, zone: house, floor_area_ft2: 168, ceiling_height_ft: 9}
+  - {id: bedroom-1, name: Bedroom (southeast), zone: house, floor_area_ft2: 168, ceiling_height_ft: 9}
+  - {id: bathroom, name: Bathroom, zone: house, floor_area_ft2: 140, ceiling_height_ft: 9}
+  - {id: bedroom-2, name: Second bedroom (east), zone: house, floor_area_ft2: 140, ceiling_height_ft: 9}
+spaces:
+  - {id: attic, type: vented_attic}
+  - {id: basement, type: unconditioned_basement}
+surfaces:
+  # living room: 28 ft (east-west) x 14 ft, across the north front
+  - {id: living-north, type: wall, inside: living, area_ft2: 252, assembly: wall-brick, azimuth_deg: 0}
+  - {id: living-east, type: wall, inside: living, area_ft2: 126, assembly: wall-brick, azimuth_deg: 90}
+  - {id: living-west, type: wall, inside: living, area_ft2: 126, assembly: wall-brick, azimuth_deg: 270}
+  - {id: living-ceiling, type: ceiling, inside: living, outside: attic, area_ft2: 392, assembly: ceiling-old}
+  - {id: living-floor, type: floor, inside: living, outside: basement, area_ft2: 392, assembly: floor-over-basement}
+  # bathroom: 14 ft x 10 ft, middle of the west side
+  - {id: bathroom-west, type: wall, inside: bathroom, area_ft2: 90, assembly: wall-brick, azimuth_deg: 270}
+  - {id: bathroom-ceiling, type: ceiling, inside: bathroom, outside: attic, area_ft2: 140, assembly: ceiling-old}
+  - {id: bathroom-floor, type: floor, inside: bathroom, outside: basement, area_ft2: 140, assembly: floor-over-basement}
+  # second bedroom: 14 ft x 10 ft, middle of the east side
+  - {id: bedroom-2-east, type: wall, inside: bedroom-2, area_ft2: 90, assembly: wall-brick, azimuth_deg: 90}
+  - {id: bedroom-2-ceiling, type: ceiling, inside: bedroom-2, outside: attic, area_ft2: 140, assembly: ceiling-old}
+  - {id: bedroom-2-floor, type: floor, inside: bedroom-2, outside: basement, area_ft2: 140, assembly: floor-over-basement}
+  # kitchen: 14 ft (east-west) x 12 ft, southwest corner
+  - {id: kitchen-south, type: wall, inside: kitchen, area_ft2: 126, assembly: wall-brick, azimuth_deg: 180}
+  - {id: kitchen-west, type: wall, inside: kitchen, area_ft2: 108, assembly: wall-brick, azimuth_deg: 270}
+  - {id: kitchen-ceiling, type: ceiling, inside: kitchen, outside: attic, area_ft2: 168, assembly: ceiling-old}
+  - {id: kitchen-floor, type: floor, inside: kitchen, outside: basement, area_ft2: 168, assembly: floor-over-basement}
+  # bedroom: 14 ft (east-west) x 12 ft, southeast corner
+  - {id: bedroom-1-south, type: wall, inside: bedroom-1, area_ft2: 126, assembly: wall-brick, azimuth_deg: 180}
+  - {id: bedroom-1-east, type: wall, inside: bedroom-1, area_ft2: 108, assembly: wall-brick, azimuth_deg: 90}
+  - {id: bedroom-1-ceiling, type: ceiling, inside: bedroom-1, outside: attic, area_ft2: 168, assembly: ceiling-old}
+  - {id: bedroom-1-floor, type: floor, inside: bedroom-1, outside: basement, area_ft2: 168, assembly: floor-over-basement}
+  # attic roof: 1008 ft2 footprint x 1.202 (8-in-12) = 1212 ft2, two slopes; ridge runs east-west
+  - {id: roof-north, type: roof, inside: attic, area_ft2: 606, assembly: attic-roof, azimuth_deg: 0, pitch_rise_per_12: 8}
+  - {id: roof-south, type: roof, inside: attic, area_ft2: 606, assembly: attic-roof, azimuth_deg: 180, pitch_rise_per_12: 8}
+  # basement: 28 ft x 36 ft, perimeter 128 ft, walls 7.5 ft tall with 6 ft below grade
+  - id: basement-walls
+    type: foundation_wall
+    inside: basement
+    area_ft2: 960
+    length_ft: 128
+    height_ft: 7.5
+    depth_below_grade_ft: 6
+    thickness_in: 8
+    material: solid_concrete
+  - {id: basement-slab, type: slab, inside: basement, area_ft2: 1008, exposed_perimeter_ft: 128}
+openings:
+  - id: living-north-windows
+    type: window
+    surface: living-north
+    count: 3
+    width_ft: 2.67
+    height_ft: 5
+    glazing: single_clear_wood
+    interior_shading: {type: medium_curtains, coverage_frac: 0.5}
+  - id: living-east-window
+    type: window
+    surface: living-east
+    width_ft: 2.67
+    height_ft: 5
+    glazing: single_clear_wood
+    interior_shading: {type: medium_curtains, coverage_frac: 0.5}
+  - id: living-west-window
+    type: window
+    surface: living-west
+    width_ft: 2.67
+    height_ft: 5
+    glazing: single_clear_wood
+    interior_shading: {type: medium_curtains, coverage_frac: 0.5}
+  - id: front-door
+    type: door
+    surface: living-north
+    width_ft: {value: 3, source: "size not given; typical 3 ft x 6 ft 8 in door", confidence: estimated}
+    height_ft: {value: 6.67, source: "size not given; typical 3 ft x 6 ft 8 in door", confidence: estimated}
+    r_value_hr_ft2_f_btu: 2
+  - {id: bathroom-west-window, type: window, surface: bathroom-west, width_ft: 2, height_ft: 3, glazing: single_clear_wood}
+  - {id: bedroom-2-east-window, type: window, surface: bedroom-2-east, width_ft: 2.67, height_ft: 5, glazing: single_clear_wood}
+  - {id: kitchen-south-window, type: window, surface: kitchen-south, width_ft: 2.67, height_ft: 5, glazing: single_clear_wood, storm_window: low_e}
+  - {id: kitchen-west-window, type: window, surface: kitchen-west, width_ft: 2.67, height_ft: 5, glazing: single_clear_wood}
+  - id: back-door
+    type: door
+    surface: kitchen-south
+    width_ft: {value: 3, source: "size not given; typical 3 ft x 6 ft 8 in door", confidence: estimated}
+    height_ft: {value: 6.67, source: "size not given; typical 3 ft x 6 ft 8 in door", confidence: estimated}
+    r_value_hr_ft2_f_btu: 4.4
+  - {id: bedroom-1-south-window, type: window, surface: bedroom-1-south, width_ft: 2.67, height_ft: 5, glazing: single_clear_wood, storm_window: low_e}
+  - {id: bedroom-1-east-window, type: window, surface: bedroom-1-east, width_ft: 2.67, height_ft: 5, glazing: single_clear_wood}
+air:
+  infiltration:
+    method: blower_door
+    airflow_cfm_at_50pa: {value: 2900, source: blower door test last year, confidence: measured}
+    stories_above_grade: 1
+  ducts:
+    - id: ducts
+      system: furnace-ac
+      supply_leakage_frac: {value: 0.1, source: "technician's guess, not measured", confidence: estimated}
+      return_leakage_frac: {value: 0.1, source: "technician's guess, not measured", confidence: estimated}
+      segments:
+        - {type: supply, location: basement, share_of_ducts_frac: 1.0, insulation_r_value_hr_ft2_f_btu: 0}
+        - {type: return, location: basement, share_of_ducts_frac: 1.0, insulation_r_value_hr_ft2_f_btu: 0}
+hvac:
+  systems:
+    - id: furnace-ac
+      zone: house
+      heating: furnace
+      cooling: central_ac
+      supply_registers: [living, kitchen, bedroom-1, bathroom, bedroom-2]
+      returns: [living]
+scenarios:
+  - id: air-seal
+    name: Air seal to about 1,800 CFM50
+    changes:
+      - {op: set, path: air/infiltration/airflow_cfm_at_50pa, value: 1800}
+  - id: attic-r38
+    name: Add R-38 loose-fill cellulose over the existing attic insulation
+    changes:
+      - op: add
+        section: assemblies
+        item:
+          id: ceiling-plus-r38
+          type: ceiling
+          layers:
+            - {material: plaster_on_wood_lath}
+            - {material: fiberglass_loose_fill, thickness_in: 6}
+            - {name: Added loose-fill cellulose R-38, r_value_hr_ft2_f_btu: 38}
+      - {op: set, path: surfaces/living-ceiling/assembly, value: ceiling-plus-r38}
+      - {op: set, path: surfaces/bathroom-ceiling/assembly, value: ceiling-plus-r38}
+      - {op: set, path: surfaces/bedroom-2-ceiling/assembly, value: ceiling-plus-r38}
+      - {op: set, path: surfaces/kitchen-ceiling/assembly, value: ceiling-plus-r38}
+      - {op: set, path: surfaces/bedroom-1-ceiling/assembly, value: ceiling-plus-r38}
+  - id: air-seal-and-attic
+    name: Air sealing and attic insulation together
+    includes: [air-seal, attic-r38]
+    changes: []

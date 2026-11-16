@@ -154,6 +154,40 @@ Paths: `air/infiltration/air_changes_per_hr_at_50pa`, `surfaces/north-wall/assem
 - A window behind a porch roof: either give it an `overhang`, or make an `open_porch` space and set the
   wall's `outside` to it (the wall and its windows are then treated as fully shaded).
 
+## Clarifications (questions writers of these files have actually had)
+
+- **Numbers with a source.** ANY numeric field may be written `{value: N, source: "...", confidence: ...}`.
+  Only `value` is required. `confidence` is `measured`, `estimated` or `default`.
+- **Scenario changes** are applied in the order listed, after the scenarios named in `includes`. `set` replaces
+  the whole old value (a bare number may replace a wrapped one and the other way round). To ADD INSULATION to
+  an existing assembly, append a layer: `{op: add, section: "assemblies/<assembly-id>/layers", item: {...layer...}}`
+  (the new layer goes on the outside end of the list), or replace a layer with
+  `{op: set, path: "assemblies/<assembly-id>/layers/<position>", value: {...layer...}}`. Every surface using that
+  assembly changes with it. Adding a new assembly and re-pointing surfaces with `set` also works.
+- **Foundation walls** always need `area_ft2` (= length x height) as well as `height_ft` and
+  `depth_below_grade_ft`. One foundation wall for the whole perimeter is fine. `rim_joist` surfaces are
+  optional detail.
+- **Slabs.** `exposed_perimeter_ft` is the length of slab edge along exterior walls, also for a basement
+  floor deep below grade. Default thickness is 4 in.
+- **Solid masonry walls** (brick, stone, block, concrete, log): set `construction` to the material, set
+  `cladding: none`, and still list the masonry as a layer. `construction`, `cladding`, `roofing` and
+  `roof_color` describe the surface for the solar and time-lag part of the calculation; they add no R-value,
+  so the layers must carry all of it (including a shingle layer on a roof).
+- **Fixed-R materials** (`air_space_closed`, `plaster_on_wood_lath` ...) may be given a `thickness_in`; it is
+  recorded but the R-value does not change. A thin furred air gap is an ordinary layer, not a framed one.
+- **Attics.** Gable end walls of an attic are `wall` surfaces with `inside: <attic>`. A roof's `azimuth_deg` is
+  the direction its slope faces (downhill).
+- **Infiltration.** `volume_ft3` is optional: the default is the sum of room floor area x ceiling height (plus
+  `conditioned` spaces), which leaves out unconditioned basements, as a blower-door volume should. Defaults:
+  `stories_above_grade` 1, `shielding_class` 4, `building_type` detached, `site_shielding` normal.
+- **Ducts.** `supply_leakage_frac` / `return_leakage_frac` are fractions of the system airflow that leak to
+  outside. `share_of_ducts_frac` is the share of that system's supply (or return) duct area in that
+  location; shares of one type add up to 1 or less (the rest is taken to be inside the rooms).
+- **Interior shading.** `coverage_frac` is the share of the glass area covered. `blinds_position` applies to
+  blinds only.
+- **Ventilation** means fans that ventilate the whole house on a schedule. Bath and kitchen exhaust fans are
+  left out.
+
 ## Allowed values
 
 <!-- BEGIN GENERATED: enums -->
