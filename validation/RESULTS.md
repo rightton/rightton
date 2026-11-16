@@ -70,7 +70,9 @@ It does not show, and nobody should read it as showing:
 | Rooms get latent loads and a share of ventilation load. The reference gives rooms sensible loads only and keeps ventilation at zone level. | Room ventilation is left out when comparing room totals; zone and building totals are unaffected. |
 | Partitions between rooms in zones with different setpoints carry a zone-to-zone transfer load. The reference has one setpoint for the house and no such load. | None: sample houses have one setpoint, so the transfer is zero. Tested by hand calculation only. |
 | Wetbulb temperature is solved by bisection, the reference uses its own iteration. | Only used for weather files without a design-conditions header; results agree to rounding. |
-| Infiltration is shared among rooms by exposed wall area, as in the reference. SPEC.md asks for a user-assigned share per zone; not built yet. | None. |
+| Infiltration is shared among rooms by exposed wall area, as in the reference, unless the user assigns shares. | None: sample houses assign no shares. Tested by hand calculation only. |
+| A window in a wall that faces a porch, garage or other buffer space gets a load (shaded-glass value under an open porch, conduction only otherwise). The reference gives such windows no load at all. | One sample house has such a window (`base-bldgtype-mf-unit-adjacent-to-multiple-hvac-none`); the comparison leaves that window out on the RightTon side so both engines see the same inputs. With it, RightTon's heating total is 4.9 % higher. Tested by hand calculation only. |
+| Heat from equipment such as a dehumidifier is its own result line. The reference has no such input. | None. |
 
 ## Not ported in v1 (the skipped houses)
 

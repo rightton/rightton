@@ -333,6 +333,11 @@ def load(path, epw_dir) -> M.Building:
         wall = el.find("AttachedToWall").get("idref")
         if wall not in wall_ids:
             continue
+        if bldg.wall_by_id(wall).outside not in (M.OUTSIDE, M.GROUND):
+            # The reference gives no load to a window in a wall that faces another
+            # space; RightTon does (see RESULTS.md, known differences). Left out here
+            # so the two engines are compared on the same inputs.
+            continue
         shade = el.find("InteriorShading")
         ext = el.find("ExteriorShading")
         screen = el.find("InsectScreen")

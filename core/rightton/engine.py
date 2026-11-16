@@ -38,9 +38,10 @@ HEAT_COMPONENTS = ("heat_windows", "heat_skylights", "heat_doors", "heat_walls",
                    "heat_piping", "heat_ducts")
 COOL_SENS_COMPONENTS = ("cool_windows", "cool_skylights", "cool_doors", "cool_walls", "cool_roofs", "cool_floors",
                         "cool_slabs", "cool_ceilings", "cool_infiltration_sens", "cool_ventilation_sens",
-                        "cool_internal_sens", "cool_interzone", "cool_blower_heat", "cool_aed_excursion",
+                        "cool_internal_sens", "cool_equipment_sens", "cool_interzone", "cool_blower_heat", "cool_aed_excursion",
                         "cool_ducts_sens")
-COOL_LAT_COMPONENTS = ("cool_infiltration_lat", "cool_ventilation_lat", "cool_internal_lat", "cool_ducts_lat")
+COOL_LAT_COMPONENTS = ("cool_infiltration_lat", "cool_ventilation_lat", "cool_internal_lat", "cool_equipment_lat",
+                       "cool_ducts_lat")
 
 
 @dataclass
@@ -73,6 +74,7 @@ class Loads:
     cool_infiltration_sens: float = 0.0
     cool_ventilation_sens: float = 0.0
     cool_internal_sens: float = 0.0
+    cool_equipment_sens: float = 0.0  # heat-producing equipment, e.g. a dehumidifier (RightTon extension)
     cool_interzone: float = 0.0
     cool_blower_heat: float = 0.0
     cool_aed_excursion: float = 0.0
@@ -82,6 +84,7 @@ class Loads:
     cool_infiltration_lat: float = 0.0
     cool_ventilation_lat: float = 0.0
     cool_internal_lat: float = 0.0
+    cool_equipment_lat: float = 0.0
     cool_ducts_lat: float = 0.0
     cool_latent: float = 0.0
 
@@ -214,10 +217,33 @@ def calculate(bldg: Building) -> Results:
     # --- Windows (process_load_windows_skylights) ----------------------------
     for w in bldg.windows:
         wall = bldg.wall_by_id(w.wall)
-        if not (is_boundary(wall) and wall.outside in (OUTSIDE, GROUND)):
+        if not is_boundary(wall):
             continue
         room = wall.inside
         u, shgc = fen.storm_adjusted(w.u_factor, w.shgc, w.storm)
+        if wall.outside not in (OUTSIDE, GROUND):
+            # RightTon extension (the reference ignores windows in partition walls):
+            # a window facing a buffer space. Under an open porch (a "weighted" space
+            # at outdoor temperature) the glass is treated as fully shaded, using the
+            # method's own shaded-glass (north) value; facing any other space it
+            # conducts to that space's design temperature with no solar gain.
+            space = bldg.buffer(wall.outside)
+            heat_htm = u * (heat_setpoint(room) - heat_temps[space.id])
+            space_ctd = cool_temps[space.id] - cool_setpoint(room)
+            if space.kind == "weighted" and space.outdoor_weight == 1.0:
+                isc = fen.interior_shading_coefficient(w)
+                esc, _ = fen.exterior_shading(w)
+                kw = dict(latitude=c.latitude_deg, azimuth_deg=0.0, u_factor=u, shgc=shgc, isc=isc, esc=esc,
+                          ctd_f=space_ctd, daily_range_index=site.dr)
+                add("windows", w.id, room, w.area_ft2, heat_htm, fen.window_cooling_htm(**kw),
+                    "heat_windows", "cool_windows")
+                for hr in range(fen.HOURS):
+                    load = fen.window_cooling_htm(hr=hr, **kw) * w.area_ft2
+                    rooms[room].hourly_fenestration[hr] += load
+                    hourly_windows[room][hr] += load
+            else:
+                add("windows", w.id, room, w.area_ft2, heat_htm, u * space_ctd, "heat_windows", "cool_windows")
+            continue
         isc = fen.interior_shading_coefficient(w)
         esc, screen_sc = fen.exterior_shading(w)
         kw = dict(latitude=c.latitude_deg, azimuth_deg=w.azimuth_deg, u_factor=u, shgc=shgc, isc=isc, esc=esc,
@@ -383,9 +409,14 @@ def calculate(bldg: Building) -> Results:
     total_exposed = sum(exposed_wall_area.values())
     cfa = bldg.cfa_ft2
     wall_ratio = {}
+    shares = {r.id: r.infiltration_share for r in bldg.rooms if r.infiltration_share is not None}
+    total_share = sum(shares.values())
     for r in bldg.rooms:
         loads = rooms[r.id]
-        ratio = exposed_wall_area[r.id] / total_exposed if total_exposed else 0.0
+        if total_share > 0:  # user-assigned shares (RightTon extension)
+            ratio = shares.get(r.id, 0.0) / total_share
+        else:
+            ratio = exposed_wall_area[r.id] / total_exposed if total_exposed else 0.0
         wall_ratio[r.id] = ratio
         loads.heat_infiltration = infil_heat * ratio  # by exposed wall area
         loads.cool_infiltration_sens = infil_cool_sens * ratio
@@ -397,6 +428,8 @@ def calculate(bldg: Building) -> Results:
         # --- Internal gains (process_load_internal_gains) ---------------------
         loads.cool_internal_sens = r.internal_sensible_btuh + T.OCCUPANT_SENSIBLE_BTUH * r.occupants
         loads.cool_internal_lat = r.internal_latent_btuh + T.OCCUPANT_LATENT_BTUH * r.occupants
+        loads.cool_equipment_sens = r.equipment_sensible_btuh
+        loads.cool_equipment_lat = r.equipment_latent_btuh
 
     # --- Totals, then zone-level items ----------------------------------------
     room_peak = {}

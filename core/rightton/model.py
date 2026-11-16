@@ -75,6 +75,12 @@ class Room:
     internal_sensible_btuh: float = 0.0  # appliances, lighting, equipment
     internal_latent_btuh: float = 0.0
     below_grade: bool = False  # room is in a conditioned basement
+    # Heat from equipment reported on its own line (e.g. a dehumidifier's heat output)
+    equipment_sensible_btuh: float = 0.0
+    equipment_latent_btuh: float = 0.0
+    # Share of whole-house infiltration assigned to this room. If any room has a
+    # share, shares are used (normalized) instead of exposed wall area.
+    infiltration_share: Optional[float] = None
 
 
 @dataclass

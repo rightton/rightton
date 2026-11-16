@@ -375,3 +375,59 @@ def test_validation_errors():
     b.walls[0].r_value = None
     with pytest.raises(ValueError):
         calculate(b)
+
+
+def test_equipment_heat_is_reported_on_its_own_line():
+    # A dehumidifier rejecting 1500 Btu/h of heat into the room and removing 900 Btu/h of moisture load
+    b = one_room_house()
+    base = calculate(b).building
+    b.rooms[0].equipment_sensible_btuh = 1500.0
+    b.rooms[0].equipment_latent_btuh = -900.0
+    res = calculate(b).building
+    assert res.cool_equipment_sens == 1500.0
+    assert res.cool_equipment_lat == -900.0
+    assert res.cool_internal_sens == base.cool_internal_sens      # people and appliances unchanged
+    assert res.cool_sensible == approx(base.cool_sensible + 1500.0)
+    assert res.cool_latent == approx(base.cool_latent - 900.0)
+
+
+def test_user_assigned_infiltration_shares():
+    b = two_zone_house()
+    b.zones[1].heating_setpoint_f = b.zones[1].cooling_setpoint_f = None
+    b.infiltration = Infiltration(ela_in2=72.0)
+    # By wall area the split would be 75 / 25; the user assigns 2 : 3 instead -> 40 % / 60 %
+    b.rooms[0].infiltration_share = 2.0
+    b.rooms[1].infiltration_share = 3.0
+    res = calculate(b)
+    assert res.room_wall_area_ratio == {"first": approx(0.4), "second": approx(0.6)}
+    # Whole house 6311.4 Btu/h (see test above)
+    assert res.rooms["second"].heat_infiltration == approx(6311.4 * 0.6, rel=2e-4)
+
+
+def test_window_behind_open_porch_is_fully_shaded():
+    # Wall and single-pane window (U 1.0, SHGC 0.7) facing an open porch at outdoor temperature.
+    porch = BufferSpace("porch", "weighted", outdoor_weight=1.0)
+    b = Building(conditions=conditions(), zones=[Zone("z")], rooms=[Room("parlor", "z", 300.0)],
+                 buffer_spaces=[porch],
+                 walls=[Wall("pw", "parlor", "porch", 200.0, r_value=4.0)],
+                 windows=[Window("pwin", "pw", 30.0, 180.0, 1.0, 0.7)])
+    room = calculate(b).rooms["parlor"]
+    # Heating: 1.0 * (70 - 10) * 30 = 1800
+    assert room.heat_windows == approx(1800.0)
+    # Cooling, shaded glass at 40 deg latitude: PSF north 35 * average CLF north 0.48 * 0.7 / 0.87 + 1.0 * 20
+    # = 13.517 + 20 = 33.517 Btu/h-ft2 -> x 30 = 1005.5 (a sunlit south window would be 28.77 + 20 = 48.77)
+    assert room.cool_windows == approx(1005.5, rel=2e-4)
+    # The wall behind the porch sees outdoor air but no sun: (95 - 75) / 4 * 170 = 850
+    assert room.cool_walls == approx(850.0)
+
+
+def test_window_facing_a_garage_conducts_only():
+    b = Building(conditions=conditions(), zones=[Zone("z")], rooms=[Room("room", "z", 300.0)],
+                 buffer_spaces=[BufferSpace("garage", "garage", heating_design_temp_f=30.0,
+                                            cooling_design_temp_f=100.0)],
+                 walls=[Wall("gw", "room", "garage", 200.0, r_value=13.0)],
+                 windows=[Window("gwin", "gw", 10.0, 0.0, 0.5, 0.6)])
+    room = calculate(b).rooms["room"]
+    # 0.5 * (70 - 30) * 10 = 200; 0.5 * (100 - 75) * 10 = 125
+    assert room.heat_windows == approx(200.0)
+    assert room.cool_windows == approx(125.0)
