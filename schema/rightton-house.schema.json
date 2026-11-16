@@ -1,0 +1,2275 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://rightton.github.io/rightton/schema/rightton-house.schema.json",
+ "title": "RightTon house file",
+ "description": "A house described for heating and cooling load calculation. US units only; every quantity carries its unit in its field name. Version 1.0.",
+ "type": "object",
+ "required": [
+  "format_version",
+  "rooms",
+  "zones"
+ ],
+ "additionalProperties": false,
+ "properties": {
+  "format_version": {
+   "type": "string",
+   "pattern": "^1\\.[0-9]+\\.[0-9]+$",
+   "description": "Version of this format the file was written for, as MAJOR.MINOR.PATCH. This schema is 1.0.0. Readers accept any 1.x file."
+  },
+  "project": {
+   "type": "object",
+   "description": "About the project. Never put a street address, an owner's name or other personal details here.",
+   "properties": {
+    "name": {
+     "type": "string",
+     "description": "Short project name."
+    },
+    "description": {
+     "type": "string",
+     "description": "What this file describes."
+    },
+    "notes": {
+     "type": "string",
+     "description": "Free-form note. Never used in the calculation."
+    },
+    "bedroom_count": {
+     "type": "integer",
+     "minimum": 0,
+     "description": "Number of bedrooms. Only used to default the number of occupants (bedrooms + 1)."
+    },
+    "created_with": {
+     "type": "string",
+     "description": "Tool that wrote the file."
+    }
+   },
+   "additionalProperties": false
+  },
+  "location": {
+   "type": "object",
+   "description": "Where the house is, as a weather station. There is no address field.",
+   "properties": {
+    "weather_station_id": {
+     "type": "string",
+     "description": "WMO number of the weather station, as text (e.g. \"725650\"). Supplies design conditions; see the station list in docs/FORMAT.md. Optional if design_conditions gives everything marked 'needed without a station'."
+    },
+    "weather_station_name": {
+     "type": "string",
+     "description": "Station name, for people."
+    },
+    "design_conditions": {
+     "type": "object",
+     "description": "Design conditions. Each value given here overrides the weather station's.",
+     "properties": {
+      "heating_outdoor_temp_f": {
+       "$ref": "#/$defs/quantity",
+       "description": "Outdoor temperature the heating system must cope with (99 % design drybulb). Needed without a station.",
+       "x-unit": "F"
+      },
+      "cooling_outdoor_temp_f": {
+       "$ref": "#/$defs/quantity",
+       "description": "Outdoor temperature the cooling system must cope with (1 % design drybulb). Needed without a station.",
+       "x-unit": "F"
+      },
+      "daily_temp_range": {
+       "type": "string",
+       "enum": [
+        "low",
+        "medium",
+        "high"
+       ],
+       "description": "Typical summer day-night temperature swing: \"low\" (under 16 F), \"medium\" (16 to 25 F), \"high\" (over 25 F). Needed without a station."
+      },
+      "humidity_difference_gr_lb": {
+       "$ref": "#/$defs/quantity",
+       "description": "Outdoor minus indoor moisture content at cooling design conditions, in grains of water per pound of dry air. Negative in dry climates. Needed without a station.",
+       "x-unit": "grains/lb"
+      },
+      "latitude_deg": {
+       "$ref": "#/$defs/quantity",
+       "description": "Latitude, positive north. Needed without a station.",
+       "x-unit": "deg",
+       "x-min": -90,
+       "x-max": 90
+      },
+      "elevation_ft": {
+       "$ref": "#/$defs/quantity",
+       "description": "Elevation above sea level. Default 0 without a station.",
+       "x-unit": "ft"
+      },
+      "heating_setpoint_f": {
+       "$ref": "#/$defs/quantity",
+       "description": "Indoor temperature in winter. Default 70.",
+       "x-unit": "F"
+      },
+      "cooling_setpoint_f": {
+       "$ref": "#/$defs/quantity",
+       "description": "Indoor temperature in summer. Default 75.",
+       "x-unit": "F"
+      },
+      "cooling_indoor_humidity_frac": {
+       "$ref": "#/$defs/quantity",
+       "description": "Indoor relative humidity in summer, as a fraction. Default 0.5 (0.45 in dry climates).",
+       "x-unit": "0-1",
+       "x-min": 0,
+       "x-max": 1
+      },
+      "ground_conductivity_btu_hr_ft_f": {
+       "$ref": "#/$defs/quantity",
+       "description": "Soil thermal conductivity. Default 0.8.",
+       "x-unit": "Btu/h-ft-F",
+       "x-min": 0
+      },
+      "cooling_outdoor_humidity_ratio_lb_lb": {
+       "$ref": "#/$defs/quantity",
+       "description": "Moisture content of outdoor air at cooling design, pounds of water per pound of dry air. Used for duct loads.",
+       "x-unit": "lb/lb",
+       "x-min": 0
+      },
+      "annual_average_temp_f": {
+       "$ref": "#/$defs/quantity",
+       "description": "Annual average outdoor temperature.",
+       "x-unit": "F"
+      },
+      "ground_temp_winter_f": {
+       "$ref": "#/$defs/quantity",
+       "description": "Coldest monthly shallow-ground temperature.",
+       "x-unit": "F"
+      },
+      "ground_temp_summer_f": {
+       "$ref": "#/$defs/quantity",
+       "description": "Warmest monthly shallow-ground temperature.",
+       "x-unit": "F"
+      },
+      "weather_shielding_factor": {
+       "$ref": "#/$defs/quantity",
+       "description": "ASHRAE 62.2 weather and shielding factor of the station (no unit, about 0.4 to 0.7).",
+       "x-unit": "none",
+       "x-min": 0
+      }
+     },
+     "additionalProperties": false
+    }
+   },
+   "additionalProperties": false
+  },
+  "assemblies": {
+   "type": "array",
+   "description": "Library of constructions (walls, roofs, ceilings, floors), each defined once and used by id from surfaces.",
+   "items": {
+    "type": "object",
+    "description": "One construction. Give either layers (R-value is calculated, air films added automatically) or r_value_hr_ft2_f_btu for the whole assembly.",
+    "properties": {
+     "id": {
+      "$ref": "#/$defs/id",
+      "description": "Unique id of this item. Lowercase letters, digits, hyphens and underscores; must start with a letter or digit."
+     },
+     "name": {
+      "type": "string",
+      "description": "Name shown to people."
+     },
+     "notes": {
+      "type": "string",
+      "description": "Free-form note. Never used in the calculation."
+     },
+     "type": {
+      "type": "string",
+      "enum": [
+       "wall",
+       "roof",
+       "ceiling",
+       "floor"
+      ],
+      "description": "What the assembly is used for. It sets which air films are added."
+     },
+     "r_value_hr_ft2_f_btu": {
+      "$ref": "#/$defs/quantity",
+      "description": "R-value of the whole assembly INCLUDING air films, when layers are not given.",
+      "x-unit": "hr-ft2-F/Btu",
+      "x-min": 0
+     },
+     "layers": {
+      "type": "array",
+      "description": "Layers from the inside face to the outside face. Do not include air films.",
+      "items": {
+       "type": "object",
+       "description": "One layer, listed from the inside face to the outside face. Give material (with thickness_in unless the material has a fixed R-value), or r_per_inch_hr_ft2_f_btu_in with thickness_in, or r_value_hr_ft2_f_btu.",
+       "properties": {
+        "name": {
+         "type": "string",
+         "description": "Name shown to people."
+        },
+        "material": {
+         "type": "string",
+         "description": "Id of a material in the materials list (docs/FORMAT.md), which supplies the R-value per inch."
+        },
+        "thickness_in": {
+         "$ref": "#/$defs/quantity",
+         "description": "Layer thickness.",
+         "x-unit": "in",
+         "x-min": 0
+        },
+        "r_per_inch_hr_ft2_f_btu_in": {
+         "$ref": "#/$defs/quantity",
+         "description": "R-value per inch of thickness.",
+         "x-unit": "hr-ft2-F/Btu per in",
+         "x-min": 0
+        },
+        "r_value_hr_ft2_f_btu": {
+         "$ref": "#/$defs/quantity",
+         "description": "R-value of the whole layer (e.g. a rated batt or an air space).",
+         "x-unit": "hr-ft2-F/Btu",
+         "x-min": 0
+        },
+        "framing_material": {
+         "type": "string",
+         "description": "For a framed layer: id of the material of the framing members (usually softwood)."
+        },
+        "framing_r_per_inch_hr_ft2_f_btu_in": {
+         "$ref": "#/$defs/quantity",
+         "description": "For a framed layer: R per inch of the framing members, as an alternative to framing_material.",
+         "x-unit": "hr-ft2-F/Btu per in",
+         "x-min": 0
+        },
+        "source": {
+         "type": "string",
+         "description": "Where the R-value came from."
+        }
+       },
+       "additionalProperties": false
+      },
+      "minItems": 1
+     },
+     "framing_frac": {
+      "$ref": "#/$defs/quantity",
+      "description": "Share of the area taken up by framing members, for assemblies with a framed layer (0.25 is typical for 16-in stud spacing with plates and headers). Default 0.",
+      "x-unit": "0-1",
+      "x-min": 0,
+      "x-max": 0.99
+     },
+     "construction": {
+      "type": "string",
+      "enum": [
+       "wood_stud",
+       "steel_stud",
+       "double_wood_stud",
+       "sip",
+       "cmu",
+       "brick",
+       "adobe",
+       "concrete",
+       "stone",
+       "log",
+       "icf",
+       "straw_bale"
+      ],
+      "description": "Walls: structural type, used to estimate how slowly the wall passes summer heat. Default \"wood_stud\"."
+     },
+     "cladding": {
+      "type": "string",
+      "enum": [
+       "wood",
+       "vinyl",
+       "aluminum",
+       "fiber_cement",
+       "stucco",
+       "shingle",
+       "brick",
+       "stone",
+       "other",
+       "none"
+      ],
+      "description": "Walls: exterior finish. Only \"brick\" and \"stone\" change the calculation. Default \"wood\"."
+     },
+     "solar_absorptance_frac": {
+      "$ref": "#/$defs/quantity",
+      "description": "Walls: share of sunlight the exterior absorbs: about 0.3 white, 0.5 light, 0.7 medium, 0.9 dark. Default 0.7.",
+      "x-unit": "0-1",
+      "x-min": 0,
+      "x-max": 1
+     },
+     "roofing": {
+      "type": "string",
+      "enum": [
+       "asphalt_shingles",
+       "wood_shingles",
+       "metal",
+       "clay_tile",
+       "concrete",
+       "plastic_rubber",
+       "eps",
+       "shingles"
+      ],
+      "description": "Roofs: roofing material. Default \"asphalt_shingles\"."
+     },
+     "roof_color": {
+      "type": "string",
+      "enum": [
+       "dark",
+       "medium_dark",
+       "medium",
+       "medium_light",
+       "light",
+       "white",
+       "reflective"
+      ],
+      "description": "Roofs: color. Default \"medium\"."
+     },
+     "radiant_barrier": {
+      "type": "boolean",
+      "description": "Roofs: true if there is a radiant barrier under the roof deck."
+     }
+    },
+    "additionalProperties": false,
+    "required": [
+     "id",
+     "type"
+    ]
+   }
+  },
+  "zones": {
+   "type": "array",
+   "description": "Zones: groups of rooms served and controlled together (one thermostat). At least one.",
+   "items": {
+    "type": "object",
+    "description": "One zone.",
+    "properties": {
+     "id": {
+      "$ref": "#/$defs/id",
+      "description": "Unique id of this item. Lowercase letters, digits, hyphens and underscores; must start with a letter or digit."
+     },
+     "name": {
+      "type": "string",
+      "description": "Name shown to people."
+     },
+     "notes": {
+      "type": "string",
+      "description": "Free-form note. Never used in the calculation."
+     },
+     "heating_setpoint_f": {
+      "$ref": "#/$defs/quantity",
+      "description": "Winter indoor temperature for this zone, if different from the house.",
+      "x-unit": "F"
+     },
+     "cooling_setpoint_f": {
+      "$ref": "#/$defs/quantity",
+      "description": "Summer indoor temperature for this zone, if different from the house.",
+      "x-unit": "F"
+     },
+     "radiant_floor_heat": {
+      "type": "boolean",
+      "description": "True if the zone is heated by a radiant floor."
+     }
+    },
+    "additionalProperties": false,
+    "required": [
+     "id"
+    ]
+   },
+   "minItems": 1
+  },
+  "rooms": {
+   "type": "array",
+   "description": "Conditioned rooms. At least one.",
+   "items": {
+    "type": "object",
+    "description": "One room.",
+    "properties": {
+     "id": {
+      "$ref": "#/$defs/id",
+      "description": "Unique id of this item. Lowercase letters, digits, hyphens and underscores; must start with a letter or digit."
+     },
+     "name": {
+      "type": "string",
+      "description": "Name shown to people."
+     },
+     "notes": {
+      "type": "string",
+      "description": "Free-form note. Never used in the calculation."
+     },
+     "zone": {
+      "$ref": "#/$defs/id",
+      "description": "Id of the zone this room belongs to."
+     },
+     "floor_area_ft2": {
+      "$ref": "#/$defs/quantity",
+      "description": "Floor area.",
+      "x-unit": "ft2",
+      "x-min": 0
+     },
+     "ceiling_height_ft": {
+      "$ref": "#/$defs/quantity",
+      "description": "Average ceiling height. Default 8.",
+      "x-unit": "ft",
+      "x-min": 0
+     },
+     "occupant_count": {
+      "$ref": "#/$defs/quantity",
+      "description": "People in the room at the cooling peak. If no room gives this, a house total is assumed and shared by floor area.",
+      "x-unit": "people",
+      "x-min": 0
+     },
+     "internal_sensible_gain_btu_hr": {
+      "$ref": "#/$defs/quantity",
+      "description": "Heat from appliances and lighting in this room at the cooling peak. If no room gives this, a house total is assumed and shared by floor area.",
+      "x-unit": "Btu/h"
+     },
+     "internal_latent_gain_btu_hr": {
+      "$ref": "#/$defs/quantity",
+      "description": "Moisture load from appliances in this room, as heat. Default 0.",
+      "x-unit": "Btu/h"
+     },
+     "below_grade": {
+      "type": "boolean",
+      "description": "True if the room is in a conditioned basement."
+     },
+     "infiltration_share_frac": {
+      "$ref": "#/$defs/quantity",
+      "description": "Share of whole-house air leakage assigned to this room. If any room has one, shares are used (they are scaled to add to 1); otherwise leakage is shared by exposed wall area.",
+      "x-unit": "0-1",
+      "x-min": 0
+     },
+     "outline_ft": {
+      "type": "array",
+      "description": "Optional floor outline for CAD tools: list of [x, y] or [x, y, z] points in feet. Not used by the engine.",
+      "items": {
+       "type": "array",
+       "items": {
+        "type": "number"
+       },
+       "minItems": 2,
+       "maxItems": 3
+      },
+      "minItems": 3
+     }
+    },
+    "additionalProperties": false,
+    "required": [
+     "id",
+     "zone",
+     "floor_area_ft2"
+    ]
+   },
+   "minItems": 1
+  },
+  "spaces": {
+   "type": "array",
+   "description": "Spaces that are not lived-in rooms: attics, crawlspaces, unconditioned basements, garages, porches, and conditioned-but-unoccupied spaces such as a sealed attic.",
+   "items": {
+    "type": "object",
+    "description": "One space.",
+    "properties": {
+     "id": {
+      "$ref": "#/$defs/id",
+      "description": "Unique id of this item. Lowercase letters, digits, hyphens and underscores; must start with a letter or digit."
+     },
+     "name": {
+      "type": "string",
+      "description": "Name shown to people."
+     },
+     "notes": {
+      "type": "string",
+      "description": "Free-form note. Never used in the calculation."
+     },
+     "type": {
+      "type": "string",
+      "enum": [
+       "vented_attic",
+       "unvented_attic",
+       "vented_crawlspace",
+       "unvented_crawlspace",
+       "unconditioned_basement",
+       "garage",
+       "open_porch",
+       "conditioned",
+       "custom"
+      ],
+      "description": "Kind of space. \"conditioned\": inside the insulation and air barrier but not lived in (e.g. a sealed, roof-insulated attic); it must name a zone. \"open_porch\": open to outdoor air but shaded. \"custom\": temperature set by the weights or design temperatures below."
+     },
+     "zone": {
+      "$ref": "#/$defs/id",
+      "description": "For type \"conditioned\": the zone whose system conditions it."
+     },
+     "volume_ft3": {
+      "$ref": "#/$defs/quantity",
+      "description": "Air volume. Default: estimated from the space's floor or roof surfaces.",
+      "x-unit": "ft3",
+      "x-min": 0
+     },
+     "vent_area_per_floor_area_frac": {
+      "$ref": "#/$defs/quantity",
+      "description": "Vented attics and crawlspaces: net vent area divided by floor area. Default 1/300 (attic), 1/150 (crawlspace).",
+      "x-unit": "ft2/ft2",
+      "x-min": 0
+     },
+     "vent_air_changes_per_hr": {
+      "$ref": "#/$defs/quantity",
+      "description": "Vented attics: air changes per hour, as an alternative to vent area.",
+      "x-unit": "1/h",
+      "x-min": 0
+     },
+     "heating_design_temp_f": {
+      "$ref": "#/$defs/quantity",
+      "description": "Override: temperature of the space at the heating design condition.",
+      "x-unit": "F"
+     },
+     "cooling_design_temp_f": {
+      "$ref": "#/$defs/quantity",
+      "description": "Override: temperature of the space at the cooling design condition.",
+      "x-unit": "F"
+     },
+     "indoor_weight_frac": {
+      "$ref": "#/$defs/quantity",
+      "description": "Type \"custom\": weight of indoor temperature in the space temperature.",
+      "x-unit": "0-1",
+      "x-min": 0,
+      "x-max": 1
+     },
+     "outdoor_weight_frac": {
+      "$ref": "#/$defs/quantity",
+      "description": "Type \"custom\": weight of outdoor temperature.",
+      "x-unit": "0-1",
+      "x-min": 0,
+      "x-max": 1
+     },
+     "ground_weight_frac": {
+      "$ref": "#/$defs/quantity",
+      "description": "Type \"custom\": weight of ground temperature.",
+      "x-unit": "0-1",
+      "x-min": 0,
+      "x-max": 1
+     },
+     "min_temp_f": {
+      "$ref": "#/$defs/quantity",
+      "description": "Type \"custom\": the space never gets colder than this.",
+      "x-unit": "F"
+     },
+     "duct_regain_frac": {
+      "$ref": "#/$defs/quantity",
+      "description": "Type \"custom\": share of duct losses in this space that return to the house.",
+      "x-unit": "0-1",
+      "x-min": 0,
+      "x-max": 1
+     }
+    },
+    "additionalProperties": false,
+    "required": [
+     "id",
+     "type"
+    ]
+   }
+  },
+  "surfaces": {
+   "type": "array",
+   "description": "Walls, roofs, ceilings, floors and slabs: of rooms, and of unconditioned spaces (an attic's roof, a crawlspace's walls and floor).",
+   "items": {
+    "oneOf": [
+     {
+      "type": "object",
+      "description": "Above-grade wall.",
+      "properties": {
+       "type": {
+        "const": "wall",
+        "description": "Always \"wall\" for this kind of surface."
+       },
+       "id": {
+        "$ref": "#/$defs/id",
+        "description": "Unique id of this item. Lowercase letters, digits, hyphens and underscores; must start with a letter or digit."
+       },
+       "name": {
+        "type": "string",
+        "description": "Name shown to people."
+       },
+       "notes": {
+        "type": "string",
+        "description": "Free-form note. Never used in the calculation."
+       },
+       "inside": {
+        "$ref": "#/$defs/id",
+        "description": "Id of the room (or unconditioned space) this surface belongs to. For a wall of a room, the room. For the roof over an attic, the attic space."
+       },
+       "area_ft2": {
+        "$ref": "#/$defs/quantity",
+        "description": "Gross area, including any windows, doors or skylights set into it.",
+        "x-unit": "ft2",
+        "x-min": 0
+       },
+       "outline_ft": {
+        "type": "array",
+        "description": "Optional polygon outline for CAD tools and 3D views: list of [x, y, z] points in feet. The engine uses area_ft2, not this.",
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "number"
+         },
+         "minItems": 3,
+         "maxItems": 3
+        },
+        "minItems": 3
+       },
+       "outside": {
+        "type": "string",
+        "description": "What is on the other side: \"outdoors\", \"ground\", \"adiabatic\" (no heat flow, e.g. a party wall), the id of an unconditioned space, or the id of another room (a partition between rooms; it only matters when the two rooms are in zones with different setpoints). Default \"outdoors\"."
+       },
+       "assembly": {
+        "$ref": "#/$defs/id",
+        "description": "Id of an entry in assemblies that describes the construction."
+       },
+       "azimuth_deg": {
+        "$ref": "#/$defs/quantity",
+        "description": "Compass direction the outside of the surface faces: 0 = north, 90 = east, 180 = south, 270 = west.",
+        "x-unit": "deg",
+        "x-min": 0,
+        "x-max": 360
+       }
+      },
+      "additionalProperties": false,
+      "required": [
+       "id",
+       "type",
+       "inside",
+       "area_ft2",
+       "assembly"
+      ]
+     },
+     {
+      "type": "object",
+      "description": "Rim (band) joist around a floor frame. Calculated like a wood-framed wall.",
+      "properties": {
+       "type": {
+        "const": "rim_joist",
+        "description": "Always \"rim_joist\" for this kind of surface."
+       },
+       "id": {
+        "$ref": "#/$defs/id",
+        "description": "Unique id of this item. Lowercase letters, digits, hyphens and underscores; must start with a letter or digit."
+       },
+       "name": {
+        "type": "string",
+        "description": "Name shown to people."
+       },
+       "notes": {
+        "type": "string",
+        "description": "Free-form note. Never used in the calculation."
+       },
+       "inside": {
+        "$ref": "#/$defs/id",
+        "description": "Id of the room (or unconditioned space) this surface belongs to. For a wall of a room, the room. For the roof over an attic, the attic space."
+       },
+       "area_ft2": {
+        "$ref": "#/$defs/quantity",
+        "description": "Gross area, including any windows, doors or skylights set into it.",
+        "x-unit": "ft2",
+        "x-min": 0
+       },
+       "outline_ft": {
+        "type": "array",
+        "description": "Optional polygon outline for CAD tools and 3D views: list of [x, y, z] points in feet. The engine uses area_ft2, not this.",
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "number"
+         },
+         "minItems": 3,
+         "maxItems": 3
+        },
+        "minItems": 3
+       },
+       "outside": {
+        "type": "string",
+        "description": "What is on the other side: \"outdoors\", \"ground\", \"adiabatic\" (no heat flow, e.g. a party wall), the id of an unconditioned space, or the id of another room (a partition between rooms; it only matters when the two rooms are in zones with different setpoints). Default \"outdoors\"."
+       },
+       "assembly": {
+        "$ref": "#/$defs/id",
+        "description": "Id of an entry in assemblies that describes the construction."
+       },
+       "azimuth_deg": {
+        "$ref": "#/$defs/quantity",
+        "description": "Compass direction the outside of the surface faces: 0 = north, 90 = east, 180 = south, 270 = west.",
+        "x-unit": "deg",
+        "x-min": 0,
+        "x-max": 360
+       }
+      },
+      "additionalProperties": false,
+      "required": [
+       "id",
+       "type",
+       "inside",
+       "area_ft2",
+       "assembly"
+      ]
+     },
+     {
+      "type": "object",
+      "description": "Basement or crawlspace wall, wholly or partly below grade.",
+      "properties": {
+       "type": {
+        "const": "foundation_wall",
+        "description": "Always \"foundation_wall\" for this kind of surface."
+       },
+       "id": {
+        "$ref": "#/$defs/id",
+        "description": "Unique id of this item. Lowercase letters, digits, hyphens and underscores; must start with a letter or digit."
+       },
+       "name": {
+        "type": "string",
+        "description": "Name shown to people."
+       },
+       "notes": {
+        "type": "string",
+        "description": "Free-form note. Never used in the calculation."
+       },
+       "inside": {
+        "$ref": "#/$defs/id",
+        "description": "Id of the room (or unconditioned space) this surface belongs to. For a wall of a room, the room. For the roof over an attic, the attic space."
+       },
+       "area_ft2": {
+        "$ref": "#/$defs/quantity",
+        "description": "Gross area, including any windows, doors or skylights set into it.",
+        "x-unit": "ft2",
+        "x-min": 0
+       },
+       "outline_ft": {
+        "type": "array",
+        "description": "Optional polygon outline for CAD tools and 3D views: list of [x, y, z] points in feet. The engine uses area_ft2, not this.",
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "number"
+         },
+         "minItems": 3,
+         "maxItems": 3
+        },
+        "minItems": 3
+       },
+       "outside": {
+        "type": "string",
+        "description": "What is on the other side: \"outdoors\", \"ground\", \"adiabatic\" (no heat flow, e.g. a party wall), the id of an unconditioned space, or the id of another room (a partition between rooms; it only matters when the two rooms are in zones with different setpoints). Default \"ground\"."
+       },
+       "assembly": {
+        "$ref": "#/$defs/id",
+        "description": "Optional. Id of an assembly giving the whole-wall R-value. If absent, the wall is built from material, thickness_in and the insulation fields."
+       },
+       "azimuth_deg": {
+        "$ref": "#/$defs/quantity",
+        "description": "Compass direction the outside of the surface faces: 0 = north, 90 = east, 180 = south, 270 = west.",
+        "x-unit": "deg",
+        "x-min": 0,
+        "x-max": 360
+       },
+       "height_ft": {
+        "$ref": "#/$defs/quantity",
+        "description": "Total wall height.",
+        "x-unit": "ft",
+        "x-min": 0
+       },
+       "depth_below_grade_ft": {
+        "$ref": "#/$defs/quantity",
+        "description": "How much of the height is below the outside ground level.",
+        "x-unit": "ft",
+        "x-min": 0
+       },
+       "length_ft": {
+        "$ref": "#/$defs/quantity",
+        "description": "Optional wall length. Default: area_ft2 / height_ft.",
+        "x-unit": "ft",
+        "x-min": 0
+       },
+       "thickness_in": {
+        "$ref": "#/$defs/quantity",
+        "description": "Wall thickness. Default 8.",
+        "x-unit": "in",
+        "x-min": 0
+       },
+       "material": {
+        "type": "string",
+        "enum": [
+         "solid_concrete",
+         "double_brick",
+         "wood",
+         "concrete_block",
+         "concrete_block_solid_core",
+         "concrete_block_perlite_core",
+         "concrete_block_foam_core",
+         "concrete_block_vermiculite_core"
+        ],
+        "description": "Structural material. Default \"solid_concrete\"."
+       },
+       "interior_insulation": {
+        "type": "object",
+        "description": "Continuous insulation on the inside face.",
+        "properties": {
+         "r_value_hr_ft2_f_btu": {
+          "$ref": "#/$defs/quantity",
+          "description": "R-value of the insulation alone.",
+          "x-unit": "hr-ft2-F/Btu",
+          "x-min": 0
+         },
+         "distance_to_top_ft": {
+          "$ref": "#/$defs/quantity",
+          "description": "Distance from the top of the wall down to the top of the insulation.",
+          "x-unit": "ft",
+          "x-min": 0
+         },
+         "distance_to_bottom_ft": {
+          "$ref": "#/$defs/quantity",
+          "description": "Distance from the top of the wall down to the bottom of the insulation.",
+          "x-unit": "ft",
+          "x-min": 0
+         }
+        },
+        "additionalProperties": false,
+        "required": [
+         "r_value_hr_ft2_f_btu",
+         "distance_to_bottom_ft"
+        ]
+       },
+       "exterior_insulation": {
+        "type": "object",
+        "description": "Continuous insulation on the outside face.",
+        "properties": {
+         "r_value_hr_ft2_f_btu": {
+          "$ref": "#/$defs/quantity",
+          "description": "R-value of the insulation alone.",
+          "x-unit": "hr-ft2-F/Btu",
+          "x-min": 0
+         },
+         "distance_to_top_ft": {
+          "$ref": "#/$defs/quantity",
+          "description": "Distance from the top of the wall down to the top of the insulation.",
+          "x-unit": "ft",
+          "x-min": 0
+         },
+         "distance_to_bottom_ft": {
+          "$ref": "#/$defs/quantity",
+          "description": "Distance from the top of the wall down to the bottom of the insulation.",
+          "x-unit": "ft",
+          "x-min": 0
+         }
+        },
+        "additionalProperties": false,
+        "required": [
+         "r_value_hr_ft2_f_btu",
+         "distance_to_bottom_ft"
+        ]
+       }
+      },
+      "additionalProperties": false,
+      "required": [
+       "id",
+       "type",
+       "inside",
+       "area_ft2",
+       "height_ft",
+       "depth_below_grade_ft"
+      ]
+     },
+     {
+      "type": "object",
+      "description": "Roof. Over an attic, inside is the attic space; over a cathedral ceiling, inside is the room.",
+      "properties": {
+       "type": {
+        "const": "roof",
+        "description": "Always \"roof\" for this kind of surface."
+       },
+       "id": {
+        "$ref": "#/$defs/id",
+        "description": "Unique id of this item. Lowercase letters, digits, hyphens and underscores; must start with a letter or digit."
+       },
+       "name": {
+        "type": "string",
+        "description": "Name shown to people."
+       },
+       "notes": {
+        "type": "string",
+        "description": "Free-form note. Never used in the calculation."
+       },
+       "inside": {
+        "$ref": "#/$defs/id",
+        "description": "Id of the room (or unconditioned space) this surface belongs to. For a wall of a room, the room. For the roof over an attic, the attic space."
+       },
+       "area_ft2": {
+        "$ref": "#/$defs/quantity",
+        "description": "Gross area, including any windows, doors or skylights set into it.",
+        "x-unit": "ft2",
+        "x-min": 0
+       },
+       "outline_ft": {
+        "type": "array",
+        "description": "Optional polygon outline for CAD tools and 3D views: list of [x, y, z] points in feet. The engine uses area_ft2, not this.",
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "number"
+         },
+         "minItems": 3,
+         "maxItems": 3
+        },
+        "minItems": 3
+       },
+       "assembly": {
+        "$ref": "#/$defs/id",
+        "description": "Id of an entry in assemblies that describes the construction."
+       },
+       "azimuth_deg": {
+        "$ref": "#/$defs/quantity",
+        "description": "Compass direction the outside of the surface faces: 0 = north, 90 = east, 180 = south, 270 = west.",
+        "x-unit": "deg",
+        "x-min": 0,
+        "x-max": 360
+       },
+       "pitch_rise_per_12": {
+        "$ref": "#/$defs/quantity",
+        "description": "Roof pitch as inches of rise per 12 inches of run (6 means 6-in-12). 0 is flat. Default 6.",
+        "x-unit": "in per 12 in",
+        "x-min": 0
+       }
+      },
+      "additionalProperties": false,
+      "required": [
+       "id",
+       "type",
+       "inside",
+       "area_ft2",
+       "assembly"
+      ]
+     },
+     {
+      "type": "object",
+      "description": "Ceiling of a room, under an attic or another space.",
+      "properties": {
+       "type": {
+        "const": "ceiling",
+        "description": "Always \"ceiling\" for this kind of surface."
+       },
+       "id": {
+        "$ref": "#/$defs/id",
+        "description": "Unique id of this item. Lowercase letters, digits, hyphens and underscores; must start with a letter or digit."
+       },
+       "name": {
+        "type": "string",
+        "description": "Name shown to people."
+       },
+       "notes": {
+        "type": "string",
+        "description": "Free-form note. Never used in the calculation."
+       },
+       "inside": {
+        "$ref": "#/$defs/id",
+        "description": "Id of the room (or unconditioned space) this surface belongs to. For a wall of a room, the room. For the roof over an attic, the attic space."
+       },
+       "area_ft2": {
+        "$ref": "#/$defs/quantity",
+        "description": "Gross area, including any windows, doors or skylights set into it.",
+        "x-unit": "ft2",
+        "x-min": 0
+       },
+       "outline_ft": {
+        "type": "array",
+        "description": "Optional polygon outline for CAD tools and 3D views: list of [x, y, z] points in feet. The engine uses area_ft2, not this.",
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "number"
+         },
+         "minItems": 3,
+         "maxItems": 3
+        },
+        "minItems": 3
+       },
+       "outside": {
+        "type": "string",
+        "description": "What is on the other side: \"outdoors\", \"ground\", \"adiabatic\" (no heat flow, e.g. a party wall), the id of an unconditioned space, or the id of another room (a partition between rooms; it only matters when the two rooms are in zones with different setpoints). Required."
+       },
+       "assembly": {
+        "$ref": "#/$defs/id",
+        "description": "Id of an entry in assemblies that describes the construction."
+       }
+      },
+      "additionalProperties": false,
+      "required": [
+       "id",
+       "type",
+       "inside",
+       "area_ft2",
+       "assembly",
+       "outside"
+      ]
+     },
+     {
+      "type": "object",
+      "description": "Framed floor of a room, over a crawlspace, garage, open air or another space.",
+      "properties": {
+       "type": {
+        "const": "floor",
+        "description": "Always \"floor\" for this kind of surface."
+       },
+       "id": {
+        "$ref": "#/$defs/id",
+        "description": "Unique id of this item. Lowercase letters, digits, hyphens and underscores; must start with a letter or digit."
+       },
+       "name": {
+        "type": "string",
+        "description": "Name shown to people."
+       },
+       "notes": {
+        "type": "string",
+        "description": "Free-form note. Never used in the calculation."
+       },
+       "inside": {
+        "$ref": "#/$defs/id",
+        "description": "Id of the room (or unconditioned space) this surface belongs to. For a wall of a room, the room. For the roof over an attic, the attic space."
+       },
+       "area_ft2": {
+        "$ref": "#/$defs/quantity",
+        "description": "Gross area, including any windows, doors or skylights set into it.",
+        "x-unit": "ft2",
+        "x-min": 0
+       },
+       "outline_ft": {
+        "type": "array",
+        "description": "Optional polygon outline for CAD tools and 3D views: list of [x, y, z] points in feet. The engine uses area_ft2, not this.",
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "number"
+         },
+         "minItems": 3,
+         "maxItems": 3
+        },
+        "minItems": 3
+       },
+       "outside": {
+        "type": "string",
+        "description": "What is on the other side: \"outdoors\", \"ground\", \"adiabatic\" (no heat flow, e.g. a party wall), the id of an unconditioned space, or the id of another room (a partition between rooms; it only matters when the two rooms are in zones with different setpoints). Required."
+       },
+       "assembly": {
+        "$ref": "#/$defs/id",
+        "description": "Id of an entry in assemblies that describes the construction."
+       }
+      },
+      "additionalProperties": false,
+      "required": [
+       "id",
+       "type",
+       "inside",
+       "area_ft2",
+       "assembly",
+       "outside"
+      ]
+     },
+     {
+      "type": "object",
+      "description": "Concrete floor on the ground (slab on grade, basement floor, or the dirt or concrete floor of a crawlspace).",
+      "properties": {
+       "type": {
+        "const": "slab",
+        "description": "Always \"slab\" for this kind of surface."
+       },
+       "id": {
+        "$ref": "#/$defs/id",
+        "description": "Unique id of this item. Lowercase letters, digits, hyphens and underscores; must start with a letter or digit."
+       },
+       "name": {
+        "type": "string",
+        "description": "Name shown to people."
+       },
+       "notes": {
+        "type": "string",
+        "description": "Free-form note. Never used in the calculation."
+       },
+       "inside": {
+        "$ref": "#/$defs/id",
+        "description": "Id of the room (or unconditioned space) this surface belongs to. For a wall of a room, the room. For the roof over an attic, the attic space."
+       },
+       "area_ft2": {
+        "$ref": "#/$defs/quantity",
+        "description": "Gross area, including any windows, doors or skylights set into it.",
+        "x-unit": "ft2",
+        "x-min": 0
+       },
+       "outline_ft": {
+        "type": "array",
+        "description": "Optional polygon outline for CAD tools and 3D views: list of [x, y, z] points in feet. The engine uses area_ft2, not this.",
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "number"
+         },
+         "minItems": 3,
+         "maxItems": 3
+        },
+        "minItems": 3
+       },
+       "exposed_perimeter_ft": {
+        "$ref": "#/$defs/quantity",
+        "description": "Length of slab edge exposed to outdoor air or ground (not edges shared with other conditioned space).",
+        "x-unit": "ft",
+        "x-min": 0
+       },
+       "thickness_in": {
+        "$ref": "#/$defs/quantity",
+        "description": "Slab thickness. Default 4. Use 0 for a dirt floor.",
+        "x-unit": "in",
+        "x-min": 0
+       },
+       "perimeter_insulation": {
+        "type": "object",
+        "description": "Vertical insulation at the slab edge.",
+        "properties": {
+         "r_value_hr_ft2_f_btu": {
+          "$ref": "#/$defs/quantity",
+          "description": "R-value.",
+          "x-unit": "hr-ft2-F/Btu",
+          "x-min": 0
+         },
+         "depth_ft": {
+          "$ref": "#/$defs/quantity",
+          "description": "How far down it extends.",
+          "x-unit": "ft",
+          "x-min": 0
+         }
+        },
+        "additionalProperties": false,
+        "required": [
+         "r_value_hr_ft2_f_btu",
+         "depth_ft"
+        ]
+       },
+       "under_slab_insulation": {
+        "type": "object",
+        "description": "Horizontal insulation under the slab.",
+        "properties": {
+         "r_value_hr_ft2_f_btu": {
+          "$ref": "#/$defs/quantity",
+          "description": "R-value.",
+          "x-unit": "hr-ft2-F/Btu",
+          "x-min": 0
+         },
+         "width_ft": {
+          "$ref": "#/$defs/quantity",
+          "description": "Width of the insulated band in from the edge.",
+          "x-unit": "ft",
+          "x-min": 0
+         },
+         "whole_slab": {
+          "type": "boolean",
+          "description": "True if the whole slab is insulated underneath."
+         }
+        },
+        "additionalProperties": false,
+        "required": [
+         "r_value_hr_ft2_f_btu"
+        ]
+       },
+       "exterior_horizontal_insulation": {
+        "type": "object",
+        "description": "Horizontal insulation wing outside the foundation.",
+        "properties": {
+         "r_value_hr_ft2_f_btu": {
+          "$ref": "#/$defs/quantity",
+          "description": "R-value.",
+          "x-unit": "hr-ft2-F/Btu",
+          "x-min": 0
+         },
+         "width_ft": {
+          "$ref": "#/$defs/quantity",
+          "description": "Width outward from the foundation.",
+          "x-unit": "ft",
+          "x-min": 0
+         },
+         "depth_below_grade_ft": {
+          "$ref": "#/$defs/quantity",
+          "description": "Depth below grade.",
+          "x-unit": "ft",
+          "x-min": 0
+         }
+        },
+        "additionalProperties": false,
+        "required": [
+         "r_value_hr_ft2_f_btu",
+         "width_ft"
+        ]
+       }
+      },
+      "additionalProperties": false,
+      "required": [
+       "id",
+       "type",
+       "inside",
+       "area_ft2",
+       "exposed_perimeter_ft"
+      ]
+     }
+    ],
+    "x-discriminator": "type"
+   }
+  },
+  "openings": {
+   "type": "array",
+   "description": "Windows, doors and skylights, each set into a surface.",
+   "items": {
+    "oneOf": [
+     {
+      "type": "object",
+      "description": "Window or glass door.",
+      "properties": {
+       "type": {
+        "const": "window",
+        "description": "Always \"window\" for this kind of opening."
+       },
+       "id": {
+        "$ref": "#/$defs/id",
+        "description": "Unique id of this item. Lowercase letters, digits, hyphens and underscores; must start with a letter or digit."
+       },
+       "name": {
+        "type": "string",
+        "description": "Name shown to people."
+       },
+       "notes": {
+        "type": "string",
+        "description": "Free-form note. Never used in the calculation."
+       },
+       "count": {
+        "type": "integer",
+        "minimum": 1,
+        "description": "How many identical units this entry stands for. Default 1."
+       },
+       "area_ft2": {
+        "$ref": "#/$defs/quantity",
+        "description": "Area of ONE unit (rough opening). Give this, or width_ft and height_ft.",
+        "x-unit": "ft2",
+        "x-min": 0
+       },
+       "width_ft": {
+        "$ref": "#/$defs/quantity",
+        "description": "Width of one unit.",
+        "x-unit": "ft",
+        "x-min": 0
+       },
+       "height_ft": {
+        "$ref": "#/$defs/quantity",
+        "description": "Height of one unit.",
+        "x-unit": "ft",
+        "x-min": 0
+       },
+       "surface": {
+        "$ref": "#/$defs/id",
+        "description": "Id of the wall (or foundation wall) the window is in."
+       },
+       "azimuth_deg": {
+        "$ref": "#/$defs/quantity",
+        "description": "Direction the window faces. Default: the wall's azimuth_deg.",
+        "x-unit": "deg",
+        "x-min": 0,
+        "x-max": 360
+       },
+       "glazing": {
+        "type": "string",
+        "description": "Id of a glazing preset (see the glazing list in docs/FORMAT.md), used when u_factor_btu_hr_ft2_f and shgc are not given."
+       },
+       "u_factor_btu_hr_ft2_f": {
+        "$ref": "#/$defs/quantity",
+        "description": "Whole-unit U-factor.",
+        "x-unit": "Btu/h-ft2-F",
+        "x-min": 0
+       },
+       "shgc": {
+        "$ref": "#/$defs/quantity",
+        "description": "Solar heat gain coefficient (0 to 1, no unit).",
+        "x-unit": "0-1",
+        "x-min": 0,
+        "x-max": 1
+       },
+       "glass_layers": {
+        "type": "integer",
+        "enum": [
+         1,
+         2,
+         3
+        ],
+        "description": "Number of panes, if known (used to pick interior-shading factors)."
+       },
+       "glass_type": {
+        "type": "string",
+        "enum": [
+         "clear",
+         "tinted",
+         "reflective",
+         "tinted_reflective",
+         "low_e",
+         "low_e_low_solar",
+         "low_e_high_solar"
+        ],
+        "description": "Glass type, if known."
+       },
+       "storm_window": {
+        "type": "string",
+        "enum": [
+         "none",
+         "clear",
+         "low_e"
+        ],
+        "description": "Storm window added over the unit. Default \"none\"."
+       },
+       "interior_shading": {
+        "type": "object",
+        "description": "Blinds, shades or curtains inside the window. Leave out for none.",
+        "properties": {
+         "type": {
+          "type": "string",
+          "enum": [
+           "dark_blinds",
+           "medium_blinds",
+           "light_blinds",
+           "dark_shades",
+           "medium_shades",
+           "light_shades",
+           "dark_curtains",
+           "medium_curtains",
+           "light_curtains"
+          ],
+          "description": "Kind and color of the shading."
+         },
+         "coverage_frac": {
+          "$ref": "#/$defs/quantity",
+          "description": "Share of the window covered in summer. Default 0.5.",
+          "x-unit": "0-1",
+          "x-min": 0,
+          "x-max": 1
+         },
+         "blinds_position": {
+          "type": "string",
+          "enum": [
+           "closed",
+           "half_open",
+           "open"
+          ],
+          "description": "Blinds only. Default \"closed\"."
+         },
+         "coefficient_frac": {
+          "$ref": "#/$defs/quantity",
+          "description": "Alternative to type: shading coefficient entered directly (1 = no shading).",
+          "x-unit": "0-1",
+          "x-min": 0,
+          "x-max": 1
+         }
+        },
+        "additionalProperties": false
+       },
+       "exterior_shading": {
+        "type": "object",
+        "description": "Shading outside the glass other than an overhang.",
+        "properties": {
+         "type": {
+          "type": "string",
+          "enum": [
+           "solar_screens",
+           "solar_film",
+           "other"
+          ],
+          "description": "Kind of exterior shading."
+         },
+         "coefficient_frac": {
+          "$ref": "#/$defs/quantity",
+          "description": "For type \"other\": share of solar gain that still gets through (1 = no shading).",
+          "x-unit": "0-1",
+          "x-min": 0,
+          "x-max": 1
+         }
+        },
+        "additionalProperties": false,
+        "required": [
+         "type"
+        ]
+       },
+       "insect_screen": {
+        "type": "object",
+        "description": "Insect screen.",
+        "properties": {
+         "location": {
+          "type": "string",
+          "enum": [
+           "interior",
+           "exterior"
+          ],
+          "description": "Which side of the glass."
+         },
+         "coverage_frac": {
+          "$ref": "#/$defs/quantity",
+          "description": "Share of the window covered. Default 1.",
+          "x-unit": "0-1",
+          "x-min": 0,
+          "x-max": 1
+         }
+        },
+        "additionalProperties": false,
+        "required": [
+         "location"
+        ]
+       },
+       "overhang": {
+        "type": "object",
+        "description": "Roof overhang, porch roof or awning above the window.",
+        "properties": {
+         "depth_ft": {
+          "$ref": "#/$defs/quantity",
+          "description": "How far it projects out from the wall.",
+          "x-unit": "ft",
+          "x-min": 0
+         },
+         "distance_to_window_top_ft": {
+          "$ref": "#/$defs/quantity",
+          "description": "Vertical distance from the overhang down to the top of the glass.",
+          "x-unit": "ft",
+          "x-min": 0
+         },
+         "distance_to_window_bottom_ft": {
+          "$ref": "#/$defs/quantity",
+          "description": "Vertical distance from the overhang down to the bottom of the glass.",
+          "x-unit": "ft",
+          "x-min": 0
+         }
+        },
+        "additionalProperties": false,
+        "required": [
+         "depth_ft",
+         "distance_to_window_top_ft",
+         "distance_to_window_bottom_ft"
+        ]
+       }
+      },
+      "additionalProperties": false,
+      "required": [
+       "id",
+       "type",
+       "surface"
+      ]
+     },
+     {
+      "type": "object",
+      "description": "Opaque door.",
+      "properties": {
+       "type": {
+        "const": "door",
+        "description": "Always \"door\" for this kind of opening."
+       },
+       "id": {
+        "$ref": "#/$defs/id",
+        "description": "Unique id of this item. Lowercase letters, digits, hyphens and underscores; must start with a letter or digit."
+       },
+       "name": {
+        "type": "string",
+        "description": "Name shown to people."
+       },
+       "notes": {
+        "type": "string",
+        "description": "Free-form note. Never used in the calculation."
+       },
+       "count": {
+        "type": "integer",
+        "minimum": 1,
+        "description": "How many identical units this entry stands for. Default 1."
+       },
+       "area_ft2": {
+        "$ref": "#/$defs/quantity",
+        "description": "Area of ONE unit (rough opening). Give this, or width_ft and height_ft.",
+        "x-unit": "ft2",
+        "x-min": 0
+       },
+       "width_ft": {
+        "$ref": "#/$defs/quantity",
+        "description": "Width of one unit.",
+        "x-unit": "ft",
+        "x-min": 0
+       },
+       "height_ft": {
+        "$ref": "#/$defs/quantity",
+        "description": "Height of one unit.",
+        "x-unit": "ft",
+        "x-min": 0
+       },
+       "surface": {
+        "$ref": "#/$defs/id",
+        "description": "Id of the wall the door is in."
+       },
+       "r_value_hr_ft2_f_btu": {
+        "$ref": "#/$defs/quantity",
+        "description": "R-value of the door.",
+        "x-unit": "hr-ft2-F/Btu",
+        "x-min": 0
+       }
+      },
+      "additionalProperties": false,
+      "required": [
+       "id",
+       "type",
+       "surface",
+       "r_value_hr_ft2_f_btu"
+      ]
+     },
+     {
+      "type": "object",
+      "description": "Skylight.",
+      "properties": {
+       "type": {
+        "const": "skylight",
+        "description": "Always \"skylight\" for this kind of opening."
+       },
+       "id": {
+        "$ref": "#/$defs/id",
+        "description": "Unique id of this item. Lowercase letters, digits, hyphens and underscores; must start with a letter or digit."
+       },
+       "name": {
+        "type": "string",
+        "description": "Name shown to people."
+       },
+       "notes": {
+        "type": "string",
+        "description": "Free-form note. Never used in the calculation."
+       },
+       "count": {
+        "type": "integer",
+        "minimum": 1,
+        "description": "How many identical units this entry stands for. Default 1."
+       },
+       "area_ft2": {
+        "$ref": "#/$defs/quantity",
+        "description": "Area of ONE unit (rough opening). Give this, or width_ft and height_ft.",
+        "x-unit": "ft2",
+        "x-min": 0
+       },
+       "width_ft": {
+        "$ref": "#/$defs/quantity",
+        "description": "Width of one unit.",
+        "x-unit": "ft",
+        "x-min": 0
+       },
+       "height_ft": {
+        "$ref": "#/$defs/quantity",
+        "description": "Height of one unit.",
+        "x-unit": "ft",
+        "x-min": 0
+       },
+       "surface": {
+        "$ref": "#/$defs/id",
+        "description": "Id of the roof the skylight is in."
+       },
+       "azimuth_deg": {
+        "$ref": "#/$defs/quantity",
+        "description": "Direction the roof slope faces. Default: the roof's azimuth_deg.",
+        "x-unit": "deg",
+        "x-min": 0,
+        "x-max": 360
+       },
+       "u_factor_btu_hr_ft2_f": {
+        "$ref": "#/$defs/quantity",
+        "description": "Whole-unit U-factor.",
+        "x-unit": "Btu/h-ft2-F",
+        "x-min": 0
+       },
+       "shgc": {
+        "$ref": "#/$defs/quantity",
+        "description": "Solar heat gain coefficient (0 to 1, no unit).",
+        "x-unit": "0-1",
+        "x-min": 0,
+        "x-max": 1
+       },
+       "storm_window": {
+        "type": "string",
+        "enum": [
+         "none",
+         "clear",
+         "low_e"
+        ],
+        "description": "Storm window added over the unit. Default \"none\"."
+       },
+       "ceiling": {
+        "$ref": "#/$defs/id",
+        "description": "If the roof is over an attic: id of the ceiling surface the light shaft comes through."
+       },
+       "interior_shading_coefficient_frac": {
+        "$ref": "#/$defs/quantity",
+        "description": "Shading coefficient of any interior shade (1 = none).",
+        "x-unit": "0-1",
+        "x-min": 0,
+        "x-max": 1
+       },
+       "curb": {
+        "type": "object",
+        "description": "Skylight curb.",
+        "properties": {
+         "area_ft2": {
+          "$ref": "#/$defs/quantity",
+          "description": "Curb area.",
+          "x-unit": "ft2",
+          "x-min": 0
+         },
+         "r_value_hr_ft2_f_btu": {
+          "$ref": "#/$defs/quantity",
+          "description": "Curb R-value.",
+          "x-unit": "hr-ft2-F/Btu",
+          "x-min": 0
+         }
+        },
+        "additionalProperties": false,
+        "required": [
+         "area_ft2",
+         "r_value_hr_ft2_f_btu"
+        ]
+       },
+       "shaft": {
+        "type": "object",
+        "description": "Light shaft through the attic.",
+        "properties": {
+         "area_ft2": {
+          "$ref": "#/$defs/quantity",
+          "description": "Shaft wall area.",
+          "x-unit": "ft2",
+          "x-min": 0
+         },
+         "r_value_hr_ft2_f_btu": {
+          "$ref": "#/$defs/quantity",
+          "description": "Shaft wall R-value.",
+          "x-unit": "hr-ft2-F/Btu",
+          "x-min": 0
+         }
+        },
+        "additionalProperties": false,
+        "required": [
+         "area_ft2",
+         "r_value_hr_ft2_f_btu"
+        ]
+       }
+      },
+      "additionalProperties": false,
+      "required": [
+       "id",
+       "type",
+       "surface",
+       "u_factor_btu_hr_ft2_f",
+       "shgc"
+      ]
+     }
+    ],
+    "x-discriminator": "type"
+   }
+  },
+  "air": {
+   "type": "object",
+   "description": "Air leakage, mechanical ventilation and ducts.",
+   "properties": {
+    "infiltration": {
+     "type": "object",
+     "description": "Air leakage of the whole house. Give a blower-door result if there is one.",
+     "properties": {
+      "method": {
+       "type": "string",
+       "enum": [
+        "blower_door",
+        "leakiness_estimate"
+       ],
+       "description": "\"blower_door\": a measured (or estimated) leakage number is given below. \"leakiness_estimate\": only a description is given."
+      },
+      "air_changes_per_hr_at_50pa": {
+       "$ref": "#/$defs/quantity",
+       "description": "Blower-door result as ACH50: air changes per hour at 50 pascals (or at test_pressure_pa).",
+       "x-unit": "1/h",
+       "x-min": 0
+      },
+      "airflow_cfm_at_50pa": {
+       "$ref": "#/$defs/quantity",
+       "description": "Blower-door result as CFM50: airflow at 50 pascals (or at test_pressure_pa).",
+       "x-unit": "cfm",
+       "x-min": 0
+      },
+      "test_pressure_pa": {
+       "$ref": "#/$defs/quantity",
+       "description": "Test pressure if not 50 Pa.",
+       "x-unit": "Pa",
+       "x-min": 1
+      },
+      "natural_air_changes_per_hr": {
+       "$ref": "#/$defs/quantity",
+       "description": "Alternative: annual-average natural air changes per hour.",
+       "x-unit": "1/h",
+       "x-min": 0
+      },
+      "leakage_area_in2": {
+       "$ref": "#/$defs/quantity",
+       "description": "Alternative: effective leakage area at 4 Pa.",
+       "x-unit": "in2",
+       "x-min": 0
+      },
+      "leakiness": {
+       "type": "string",
+       "enum": [
+        "very_tight",
+        "tight",
+        "average",
+        "leaky",
+        "very_leaky"
+       ],
+       "description": "For method \"leakiness_estimate\"."
+      },
+      "volume_ft3": {
+       "$ref": "#/$defs/quantity",
+       "description": "Blower door: volume the test was normalized by. Leakiness estimate: above-grade conditioned volume. Default: sum of room (and conditioned space) volumes.",
+       "x-unit": "ft3",
+       "x-min": 0
+      },
+      "height_ft": {
+       "$ref": "#/$defs/quantity",
+       "description": "Height from the lowest to the highest point of the leaky envelope. Only needed with natural_air_changes_per_hr.",
+       "x-unit": "ft",
+       "x-min": 0
+      },
+      "shielding_class": {
+       "type": "integer",
+       "minimum": 1,
+       "maximum": 5,
+       "description": "Wind shielding: 1 = no obstructions, 3 = some, 4 = typical suburban (default), 5 = heavily shielded."
+      },
+      "stories_above_grade": {
+       "$ref": "#/$defs/quantity",
+       "description": "Number of conditioned stories above grade. Default 1.",
+       "x-unit": "stories",
+       "x-min": 1
+      },
+      "building_type": {
+       "type": "string",
+       "enum": [
+        "detached",
+        "attached"
+       ],
+       "description": "Default \"detached\"."
+      },
+      "exterior_envelope_frac": {
+       "$ref": "#/$defs/quantity",
+       "description": "Attached units: share of the tested envelope that faces outdoors. Default 1.",
+       "x-unit": "0-1",
+       "x-min": 0,
+       "x-max": 1
+      },
+      "unit_height_above_grade_ft": {
+       "$ref": "#/$defs/quantity",
+       "description": "Attached units and apartments: height of the unit's floor above the ground. Default 0.",
+       "x-unit": "ft",
+       "x-min": 0
+      },
+      "site_shielding": {
+       "type": "string",
+       "enum": [
+        "normal",
+        "exposed",
+        "well_shielded"
+       ],
+       "description": "Attached units above grade: how sheltered the site is from wind. Default \"normal\"."
+      },
+      "fireplace": {
+       "type": "boolean",
+       "description": "True if there is an open fireplace (adds 20 cfm in winter)."
+      }
+     },
+     "additionalProperties": false,
+     "required": [
+      "method"
+     ]
+    },
+    "ventilation": {
+     "type": "array",
+     "description": "Whole-house mechanical ventilation fans that run continuously or on a schedule (not bath or kitchen spot fans).",
+     "items": {
+      "type": "object",
+      "description": "One fan or ventilator.",
+      "properties": {
+       "id": {
+        "$ref": "#/$defs/id",
+        "description": "Unique id of this item. Lowercase letters, digits, hyphens and underscores; must start with a letter or digit."
+       },
+       "name": {
+        "type": "string",
+        "description": "Name shown to people."
+       },
+       "notes": {
+        "type": "string",
+        "description": "Free-form note. Never used in the calculation."
+       },
+       "type": {
+        "type": "string",
+        "enum": [
+         "supply",
+         "exhaust",
+         "balanced",
+         "erv",
+         "hrv"
+        ],
+        "description": "Kind of system."
+       },
+       "airflow_cfm": {
+        "$ref": "#/$defs/quantity",
+        "description": "Airflow while running.",
+        "x-unit": "cfm",
+        "x-min": 0
+       },
+       "hours_per_day_hr": {
+        "$ref": "#/$defs/quantity",
+        "description": "Hours of operation per day. Default 24.",
+        "x-unit": "h",
+        "x-min": 0,
+        "x-max": 24
+       },
+       "sensible_recovery_frac": {
+        "$ref": "#/$defs/quantity",
+        "description": "ERV/HRV: share of the temperature difference recovered (apparent sensible effectiveness).",
+        "x-unit": "0-1",
+        "x-min": 0,
+        "x-max": 1
+       },
+       "latent_recovery_frac": {
+        "$ref": "#/$defs/quantity",
+        "description": "ERV: share of the moisture difference recovered.",
+        "x-unit": "0-1",
+        "x-min": 0,
+        "x-max": 1
+       }
+      },
+      "additionalProperties": false,
+      "required": [
+       "id",
+       "type",
+       "airflow_cfm"
+      ]
+     }
+    },
+    "ducts": {
+     "type": "array",
+     "description": "Duct systems, one per HVAC system that has ducts.",
+     "items": {
+      "type": "object",
+      "description": "The ducts of one HVAC system.",
+      "properties": {
+       "id": {
+        "$ref": "#/$defs/id",
+        "description": "Unique id of this item. Lowercase letters, digits, hyphens and underscores; must start with a letter or digit."
+       },
+       "name": {
+        "type": "string",
+        "description": "Name shown to people."
+       },
+       "notes": {
+        "type": "string",
+        "description": "Free-form note. Never used in the calculation."
+       },
+       "system": {
+        "$ref": "#/$defs/id",
+        "description": "Id of the hvac system these ducts belong to."
+       },
+       "supply_leakage_cfm_at_25pa": {
+        "$ref": "#/$defs/quantity",
+        "description": "Supply-side leakage to outside at 25 Pa.",
+        "x-unit": "cfm",
+        "x-min": 0
+       },
+       "return_leakage_cfm_at_25pa": {
+        "$ref": "#/$defs/quantity",
+        "description": "Return-side leakage to outside at 25 Pa.",
+        "x-unit": "cfm",
+        "x-min": 0
+       },
+       "supply_leakage_frac": {
+        "$ref": "#/$defs/quantity",
+        "description": "Alternative: supply leakage as a share of system airflow.",
+        "x-unit": "0-1",
+        "x-min": 0,
+        "x-max": 1
+       },
+       "return_leakage_frac": {
+        "$ref": "#/$defs/quantity",
+        "description": "Alternative: return leakage as a share of system airflow.",
+        "x-unit": "0-1",
+        "x-min": 0,
+        "x-max": 1
+       },
+       "segments": {
+        "type": "array",
+        "description": "Runs of duct, grouped by where they are.",
+        "items": {
+         "type": "object",
+         "description": "Ducts of one kind in one location.",
+         "properties": {
+          "type": {
+           "type": "string",
+           "enum": [
+            "supply",
+            "return"
+           ],
+           "description": "Supply or return."
+          },
+          "location": {
+           "type": "string",
+           "description": "Where the ducts run: the id of a room or space, or \"outdoors\". Ducts in a room or a conditioned space lose nothing to outside."
+          },
+          "surface_area_ft2": {
+           "$ref": "#/$defs/quantity",
+           "description": "Duct surface area in this location.",
+           "x-unit": "ft2",
+           "x-min": 0
+          },
+          "share_of_ducts_frac": {
+           "$ref": "#/$defs/quantity",
+           "description": "Alternative to surface_area_ft2: share of this system's supply (or return) ducts that is in this location; area is then estimated from the floor area served.",
+           "x-unit": "0-1",
+           "x-min": 0,
+           "x-max": 1
+          },
+          "insulation_r_value_hr_ft2_f_btu": {
+           "$ref": "#/$defs/quantity",
+           "description": "Nominal R-value printed on the duct insulation (0 for bare ducts). Converted to an effective value.",
+           "x-unit": "hr-ft2-F/Btu",
+           "x-min": 0
+          },
+          "effective_r_value_hr_ft2_f_btu": {
+           "$ref": "#/$defs/quantity",
+           "description": "Alternative: effective R-value including air films.",
+           "x-unit": "hr-ft2-F/Btu",
+           "x-min": 0
+          }
+         },
+         "additionalProperties": false,
+         "required": [
+          "type",
+          "location"
+         ]
+        },
+        "minItems": 1
+       }
+      },
+      "additionalProperties": false,
+      "required": [
+       "id",
+       "system",
+       "segments"
+      ]
+     }
+    }
+   },
+   "additionalProperties": false
+  },
+  "equipment": {
+   "type": "array",
+   "description": "Heat-producing equipment reported on its own line in the results, e.g. a dehumidifier.",
+   "items": {
+    "type": "object",
+    "description": "One piece of equipment.",
+    "properties": {
+     "id": {
+      "$ref": "#/$defs/id",
+      "description": "Unique id of this item. Lowercase letters, digits, hyphens and underscores; must start with a letter or digit."
+     },
+     "name": {
+      "type": "string",
+      "description": "Name shown to people."
+     },
+     "notes": {
+      "type": "string",
+      "description": "Free-form note. Never used in the calculation."
+     },
+     "type": {
+      "type": "string",
+      "enum": [
+       "dehumidifier",
+       "other"
+      ],
+      "description": "Kind of equipment."
+     },
+     "room": {
+      "$ref": "#/$defs/id",
+      "description": "Id of the room (or conditioned space) the heat goes into."
+     },
+     "sensible_heat_btu_hr": {
+      "$ref": "#/$defs/quantity",
+      "description": "Heat given off into the room while running at the cooling peak.",
+      "x-unit": "Btu/h"
+     },
+     "latent_heat_btu_hr": {
+      "$ref": "#/$defs/quantity",
+      "description": "Moisture added to the room, as heat. Negative for moisture removed.",
+      "x-unit": "Btu/h"
+     }
+    },
+    "additionalProperties": false,
+    "required": [
+     "id",
+     "type",
+     "room",
+     "sensible_heat_btu_hr"
+    ]
+   }
+  },
+  "hvac": {
+   "type": "object",
+   "description": "Heating and cooling systems. Equipment sizes are not inputs: the calculation says what is needed.",
+   "properties": {
+    "systems": {
+     "type": "array",
+     "description": "One entry per system.",
+     "items": {
+      "type": "object",
+      "description": "One heating and/or cooling system serving one zone.",
+      "properties": {
+       "id": {
+        "$ref": "#/$defs/id",
+        "description": "Unique id of this item. Lowercase letters, digits, hyphens and underscores; must start with a letter or digit."
+       },
+       "name": {
+        "type": "string",
+        "description": "Name shown to people."
+       },
+       "notes": {
+        "type": "string",
+        "description": "Free-form note. Never used in the calculation."
+       },
+       "zone": {
+        "$ref": "#/$defs/id",
+        "description": "Id of the zone this system serves."
+       },
+       "heating": {
+        "type": "string",
+        "enum": [
+         "furnace",
+         "boiler",
+         "heat_pump",
+         "electric_resistance",
+         "other",
+         "none"
+        ],
+        "description": "Kind of heating. Default \"none\"."
+       },
+       "cooling": {
+        "type": "string",
+        "enum": [
+         "central_ac",
+         "heat_pump",
+         "mini_split",
+         "other",
+         "none"
+        ],
+        "description": "Kind of cooling. Default \"none\"."
+       },
+       "heating_airflow_cfm_per_ton": {
+        "$ref": "#/$defs/quantity",
+        "description": "Heating airflow per 12,000 Btu/h of load. Default 240 (furnace) or 360 (heat pump).",
+        "x-unit": "cfm per 12,000 Btu/h",
+        "x-min": 0
+       },
+       "cooling_airflow_cfm_per_ton": {
+        "$ref": "#/$defs/quantity",
+        "description": "Cooling airflow per 12,000 Btu/h of load. Default 360.",
+        "x-unit": "cfm per 12,000 Btu/h",
+        "x-min": 0
+       },
+       "blower_heat_btu_hr": {
+        "$ref": "#/$defs/quantity",
+        "description": "Heat added to the air by the blower motor in cooling. Default 0.",
+        "x-unit": "Btu/h",
+        "x-min": 0
+       },
+       "piping_loss_btu_hr": {
+        "$ref": "#/$defs/quantity",
+        "description": "Hydronic systems: heat lost from piping outside the conditioned space. Default 0.",
+        "x-unit": "Btu/h",
+        "x-min": 0
+       },
+       "supply_registers": {
+        "type": "array",
+        "description": "Ids of the rooms that have a supply register (or radiator, or indoor unit) of this system.",
+        "items": {
+         "$ref": "#/$defs/id"
+        }
+       },
+       "returns": {
+        "type": "array",
+        "description": "Ids of the rooms that have a return grille.",
+        "items": {
+         "$ref": "#/$defs/id"
+        }
+       }
+      },
+      "additionalProperties": false,
+      "required": [
+       "id",
+       "zone"
+      ]
+     }
+    }
+   },
+   "additionalProperties": false
+  },
+  "scenarios": {
+   "type": "array",
+   "description": "What-if variations, each a short list of changes against the baseline house above.",
+   "items": {
+    "type": "object",
+    "description": "One scenario.",
+    "properties": {
+     "id": {
+      "$ref": "#/$defs/id",
+      "description": "Unique id of this item. Lowercase letters, digits, hyphens and underscores; must start with a letter or digit."
+     },
+     "name": {
+      "type": "string",
+      "description": "Name shown to people."
+     },
+     "description": {
+      "type": "string",
+      "description": "What the scenario represents."
+     },
+     "notes": {
+      "type": "string",
+      "description": "Free-form note. Never used in the calculation."
+     },
+     "cost_usd": {
+      "$ref": "#/$defs/quantity",
+      "description": "Cost the user enters for this scenario. RightTon never supplies prices.",
+      "x-unit": "US dollars",
+      "x-min": 0
+     },
+     "includes": {
+      "type": "array",
+      "description": "Ids of other scenarios whose changes are applied first, to stack scenarios.",
+      "items": {
+       "$ref": "#/$defs/id"
+      }
+     },
+     "changes": {
+      "type": "array",
+      "description": "Changes, applied in order.",
+      "items": {
+       "oneOf": [
+        {
+         "type": "object",
+         "description": "Set one field.",
+         "properties": {
+          "op": {
+           "const": "set",
+           "description": "\"set\""
+          },
+          "path": {
+           "type": "string",
+           "description": "Where: section/id/field, e.g. \"surfaces/north-wall/assembly\" or \"air/infiltration/air_changes_per_hr_at_50pa\". Nested fields continue the path: \"openings/w1/overhang/depth_ft\"."
+          },
+          "value": {
+           "description": "New value."
+          }
+         },
+         "additionalProperties": false,
+         "required": [
+          "op",
+          "path",
+          "value"
+         ]
+        },
+        {
+         "type": "object",
+         "description": "Add an item to a section.",
+         "properties": {
+          "op": {
+           "const": "add",
+           "description": "\"add\""
+          },
+          "section": {
+           "type": "string",
+           "description": "Section the item goes into, e.g. \"openings\" or \"air/ventilation\"."
+          },
+          "item": {
+           "type": "object",
+           "description": "The complete new item, with its own id."
+          }
+         },
+         "additionalProperties": false,
+         "required": [
+          "op",
+          "section",
+          "item"
+         ]
+        },
+        {
+         "type": "object",
+         "description": "Remove an item or a field.",
+         "properties": {
+          "op": {
+           "const": "remove",
+           "description": "\"remove\""
+          },
+          "path": {
+           "type": "string",
+           "description": "What to remove, e.g. \"openings/w3\"."
+          }
+         },
+         "additionalProperties": false,
+         "required": [
+          "op",
+          "path"
+         ]
+        }
+       ],
+       "x-discriminator": "op"
+      }
+     }
+    },
+    "additionalProperties": false,
+    "required": [
+     "id",
+     "changes"
+    ]
+   }
+  },
+  "extensions": {
+   "type": "object",
+   "description": "Data owned by other tools, each under its own key (e.g. extensions.my-cad-tool). Readers must keep extensions they do not understand when re-saving.",
+   "additionalProperties": true
+  }
+ },
+ "$defs": {
+  "id": {
+   "type": "string",
+   "pattern": "^[a-z0-9][a-z0-9_-]*$",
+   "description": "An id: lowercase letters, digits, hyphens and underscores, starting with a letter or digit. Unique across the whole file."
+  },
+  "quantity": {
+   "description": "A number, or a number with where it came from.",
+   "anyOf": [
+    {
+     "type": "number"
+    },
+    {
+     "type": "object",
+     "properties": {
+      "value": {
+       "type": "number",
+       "description": "The number."
+      },
+      "source": {
+       "type": "string",
+       "description": "Where the number came from (e.g. \"blower door test, 2024\", \"tape measure\")."
+      },
+      "confidence": {
+       "type": "string",
+       "enum": [
+        "measured",
+        "estimated",
+        "default"
+       ],
+       "description": "How far to trust it. A bare number counts as \"default\"."
+      }
+     },
+     "required": [
+      "value"
+     ],
+     "additionalProperties": false
+    }
+   ]
+  }
+ }
+}

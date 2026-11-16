@@ -186,3 +186,16 @@ def test_heating_duct_load_converges_to_fixed_point():
                                               f_regain_s=0.10, f_regain_r=0.10, r_s=6.0, r_r=6.0, air_density=0.075)
     assert 30000.0 / de == approx(total, rel=5e-3)
     assert 0.5 < de < 0.95
+
+
+def test_duct_effective_r_value():
+    # Bare duct: R-1.7
+    assert ducts.duct_effective_r_value(0.0, "supply", 0.25) == 1.7
+    # All-rectangular return with R-4 wrap: 0.333 + 4 + 0.667 = 5.0
+    assert ducts.duct_effective_r_value(4.0, "return", 1.0) == approx(5.0)
+    # Supply with R-4 wrap, 25 % rectangular, 6 in round for the rest:
+    # thickness 4 / 2.8 = 1.4286 in; round-duct insulation R = 2.8 * 3 * ln(1 + 2.857 / 6) = 8.4 * 0.38946 = 3.2715
+    # interior film 0.3429 * 6^0.1974 = 0.4884; exterior film 0.667 * 6 / 8.857 = 0.4518
+    # R_round = 0.4884 + 3.2715 + 0.4518 = 4.2117; R_rect = 5.0
+    # 1 / (0.25 / 5.0 + 0.75 / 4.2117) = 1 / 0.22808 = 4.3845 -> 4.38
+    assert ducts.duct_effective_r_value(4.0, "supply", 0.25) == 4.38

@@ -16,9 +16,9 @@ from pathlib import Path
 from typing import Optional
 
 from . import psychro
+from .data import data_path
 from .model import DesignConditions
 
-_WSF_CSV = Path(__file__).resolve().parents[2] / "data" / "ashrae622_wsf.csv"
 
 
 @dataclass
@@ -81,9 +81,12 @@ def calc_wsf(drybulb_c: list[float], windspeed_m_s: list[float]) -> float:
     return round((cfa / ela) / (1000.0 * tau), 2)
 
 
-def lookup_wsf(wmo: str, csv_path: Path = _WSF_CSV) -> Optional[float]:
-    if not csv_path.exists():
-        return None
+def lookup_wsf(wmo: str, csv_path: Optional[Path] = None) -> Optional[float]:
+    if csv_path is None:
+        try:
+            csv_path = data_path("ashrae622_wsf.csv")
+        except FileNotFoundError:
+            return None
     wsf = None
     with open(csv_path, newline="") as f:
         for row in csv.reader(f):

@@ -1,0 +1,186 @@
+{
+ "_about": "Defaults RightTon applies when a house file leaves an input out. Each default has its source and a confidence flag, and every default that was applied is listed in the results so the user can see which numbers the answer rests on.",
+ "defaults": {
+  "heating_setpoint_f": {
+   "value": 70.0,
+   "unit": "F",
+   "applies_when": "location.design_conditions has no heating_setpoint_f",
+   "source": "OpenStudio-HPXML defaults.rb (commit fb18723): indoor heating design temperature",
+   "confidence": "default"
+  },
+  "cooling_setpoint_f": {
+   "value": 75.0,
+   "unit": "F",
+   "applies_when": "location.design_conditions has no cooling_setpoint_f",
+   "source": "OpenStudio-HPXML defaults.rb (commit fb18723): indoor cooling design temperature",
+   "confidence": "default"
+  },
+  "cooling_indoor_humidity_frac": {
+   "value": 0.5,
+   "unit": "fraction",
+   "applies_when": "no cooling_indoor_humidity_frac; 0.45 is used instead where outdoor design air is drier than indoor air",
+   "source": "OpenStudio-HPXML defaults.rb (commit fb18723): 50 % indoor relative humidity, 45 % in dry-summer climates",
+   "confidence": "default"
+  },
+  "ground_conductivity_btu_hr_ft_f": {
+   "value": 0.8,
+   "unit": "Btu/h-ft-F",
+   "applies_when": "no ground_conductivity_btu_hr_ft_f",
+   "source": "OpenStudio-HPXML defaults.rb (commit fb18723) / hvac_sizing.rb: heavy moist soil, R-1.25 per ft, used when the soil type is unknown",
+   "confidence": "default"
+  },
+  "ceiling_height_ft": {
+   "value": 8.0,
+   "unit": "ft",
+   "applies_when": "a room has no ceiling_height_ft",
+   "source": "OpenStudio-HPXML defaults.rb (commit fb18723): average ceiling height",
+   "confidence": "default"
+  },
+  "house_internal_sensible_gain_btu_hr": {
+   "value": 2400.0,
+   "unit": "Btu/h",
+   "applies_when": "no room has internal_sensible_gain_btu_hr; shared among rooms by floor area",
+   "source": "OpenStudio-HPXML defaults.rb (commit fb18723): appliance and lighting gain for a house with one refrigerator",
+   "confidence": "default"
+  },
+  "house_internal_latent_gain_btu_hr": {
+   "value": 0.0,
+   "unit": "Btu/h",
+   "applies_when": "no room has internal_latent_gain_btu_hr",
+   "source": "OpenStudio-HPXML defaults.rb (commit fb18723)",
+   "confidence": "default"
+  },
+  "occupant_count_from_bedrooms": {
+   "value": "bedroom_count + 1",
+   "unit": "people",
+   "applies_when": "no room has occupant_count and project.bedroom_count is given; shared among rooms by floor area",
+   "source": "OpenStudio-HPXML defaults.rb (commit fb18723): number of bedrooms plus one",
+   "confidence": "default"
+  },
+  "occupant_count": {
+   "value": 4.0,
+   "unit": "people",
+   "applies_when": "no room has occupant_count and project.bedroom_count is not given; shared among rooms by floor area",
+   "source": "RightTon choice: the three-bedroom case of the rule above",
+   "confidence": "estimated"
+  },
+  "shielding_class": {
+   "value": 4,
+   "unit": "class 1-5",
+   "applies_when": "air.infiltration has no shielding_class",
+   "source": "OpenStudio-HPXML defaults.rb (commit fb18723): infiltration shielding class for a typical suburban site",
+   "confidence": "default"
+  },
+  "stories_above_grade": {
+   "value": 1.0,
+   "unit": "stories",
+   "applies_when": "air.infiltration has no stories_above_grade",
+   "source": "RightTon choice",
+   "confidence": "estimated"
+  },
+  "interior_shading_coefficient": {
+   "value": 1.0,
+   "unit": "fraction",
+   "applies_when": "a window has no interior_shading",
+   "source": "RightTon choice: no credit for blinds or curtains unless they are described (the cautious direction for cooling load)",
+   "confidence": "default"
+  },
+  "solar_absorptance_frac": {
+   "value": 0.7,
+   "unit": "fraction",
+   "applies_when": "a wall assembly has no solar_absorptance_frac",
+   "source": "OpenStudio-HPXML defaults.rb (commit fb18723): medium-color wall",
+   "confidence": "default"
+  },
+  "roof_pitch_rise_per_12": {
+   "value": 6.0,
+   "unit": "in per 12 in",
+   "applies_when": "a roof has no pitch_rise_per_12",
+   "source": "RightTon choice",
+   "confidence": "estimated"
+  },
+  "foundation_wall_thickness_in": {
+   "value": 8.0,
+   "unit": "in",
+   "applies_when": "a foundation wall has no thickness_in",
+   "source": "OpenStudio-HPXML defaults.rb (commit fb18723)",
+   "confidence": "default"
+  },
+  "slab_thickness_in": {
+   "value": 4.0,
+   "unit": "in",
+   "applies_when": "a slab has no thickness_in",
+   "source": "OpenStudio-HPXML defaults.rb (commit fb18723)",
+   "confidence": "default"
+  },
+  "heating_airflow_cfm_per_ton": {
+   "value": {
+    "furnace": 240.0,
+    "boiler": 240.0,
+    "heat_pump": 360.0,
+    "other": 240.0
+   },
+   "unit": "cfm per 12,000 Btu/h",
+   "applies_when": "an hvac system gives no heating airflow",
+   "source": "OpenStudio-HPXML hvac.rb: default actual airflow (RESNET)",
+   "confidence": "default"
+  },
+  "cooling_airflow_cfm_per_ton": {
+   "value": 360.0,
+   "unit": "cfm per 12,000 Btu/h",
+   "applies_when": "an hvac system gives no cooling airflow",
+   "source": "OpenStudio-HPXML hvac.rb: default actual airflow (RESNET)",
+   "confidence": "default"
+  },
+  "duct_supply_area_per_floor_area": {
+   "value": 0.27,
+   "unit": "ft2 of duct per ft2 of floor served",
+   "applies_when": "a supply duct segment has share_of_ducts_frac instead of surface_area_ft2",
+   "source": "OpenStudio-HPXML defaults.rb (commit fb18723) get_duct_surface_area, based on ASHRAE Standard 152",
+   "confidence": "default"
+  },
+  "duct_return_area_per_floor_area_per_return": {
+   "value": 0.05,
+   "unit": "ft2 of duct per ft2 of floor served, per return grille (at most 0.25)",
+   "applies_when": "a return duct segment has share_of_ducts_frac instead of surface_area_ft2",
+   "source": "OpenStudio-HPXML defaults.rb (commit fb18723) get_duct_surface_area, based on ASHRAE Standard 152",
+   "confidence": "default"
+  },
+  "duct_rectangular_fraction": {
+   "value": {
+    "supply": 0.25,
+    "return": 1.0
+   },
+   "unit": "fraction of duct length that is rectangular",
+   "applies_when": "a duct segment gives insulation_r_value_hr_ft2_f_btu (nominal) instead of an effective R-value",
+   "source": "OpenStudio-HPXML defaults.rb (commit fb18723)",
+   "confidence": "default"
+  },
+  "vented_attic_vent_area_frac": {
+   "value": 0.003333,
+   "unit": "ft2 of vent per ft2 of attic floor",
+   "applies_when": "a vented attic has no vent_area_per_floor_area_frac",
+   "source": "OpenStudio-HPXML defaults.rb (commit fb18723): 1/300",
+   "confidence": "default"
+  },
+  "vented_crawlspace_vent_area_frac": {
+   "value": 0.006667,
+   "unit": "ft2 of vent per ft2 of crawlspace floor",
+   "applies_when": "a vented crawlspace has no vent_area_per_floor_area_frac",
+   "source": "OpenStudio-HPXML defaults.rb (commit fb18723): 1/150",
+   "confidence": "default"
+  },
+  "space_height_ft": {
+   "value": {
+    "unconditioned_basement": 8.0,
+    "vented_crawlspace": 3.0,
+    "unvented_crawlspace": 3.0,
+    "garage": 8.0
+   },
+   "unit": "ft",
+   "applies_when": "a space has no volume_ft3: volume = floor area of its slab or floor x this height (attics: footprint x height / 3 from roof pitch)",
+   "source": "OpenStudio-HPXML defaults.rb (commit fb18723) / geometry.rb",
+   "confidence": "default"
+  }
+ }
+}

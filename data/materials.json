@@ -1,0 +1,309 @@
+{
+ "_about": "Layer materials for the assembly builder. R-values are hr-ft2-F/Btu (per inch where stated). Entries marked 'estimated' with [CONFIRM] are typical values still to be tied to a citable open source; enter a measured or rated value in the house file when one is known.",
+ "materials": [
+  {
+   "id": "gypsum_board",
+   "name": "Gypsum board (drywall)",
+   "r_per_inch_hr_ft2_f_btu_in": 0.9,
+   "typical_thickness_in": 0.5,
+   "use": "interior finish",
+   "source": "OpenStudio-HPXML materials.rb (commit fb18723), conductivity k converted to R per inch = 1/k",
+   "confidence": "default"
+  },
+  {
+   "id": "plaster_on_wood_lath",
+   "name": "Plaster on wood lath",
+   "r_value_hr_ft2_f_btu": 0.4,
+   "typical_thickness_in": 0.875,
+   "use": "interior finish",
+   "source": "Typical published value; not yet checked against a citable open source [CONFIRM]",
+   "confidence": "estimated",
+   "note": "Three-coat plaster over wood lath, about 7/8 in total."
+  },
+  {
+   "id": "plaster_on_metal_lath",
+   "name": "Plaster on metal lath",
+   "r_value_hr_ft2_f_btu": 0.23,
+   "typical_thickness_in": 0.75,
+   "use": "interior finish",
+   "source": "Typical published value; not yet checked against a citable open source [CONFIRM]",
+   "confidence": "estimated"
+  },
+  {
+   "id": "wood_paneling",
+   "name": "Wood paneling or boards (interior)",
+   "r_per_inch_hr_ft2_f_btu_in": 1.249,
+   "typical_thickness_in": 0.75,
+   "use": "interior finish",
+   "source": "OpenStudio-HPXML materials.rb (commit fb18723), conductivity k converted to R per inch = 1/k",
+   "confidence": "default"
+  },
+  {
+   "id": "softwood",
+   "name": "Softwood lumber, boards, plywood, OSB",
+   "r_per_inch_hr_ft2_f_btu_in": 1.249,
+   "use": "framing, sheathing, subfloor",
+   "source": "OpenStudio-HPXML materials.rb (commit fb18723), conductivity k converted to R per inch = 1/k",
+   "confidence": "default",
+   "note": "Use for studs, joists, rafters, board or panel sheathing and subfloors."
+  },
+  {
+   "id": "board_sheathing",
+   "name": "Board sheathing (3/4 in, straight or diagonal)",
+   "r_per_inch_hr_ft2_f_btu_in": 1.249,
+   "typical_thickness_in": 0.75,
+   "use": "sheathing",
+   "source": "OpenStudio-HPXML materials.rb (commit fb18723), conductivity k converted to R per inch = 1/k",
+   "confidence": "default"
+  },
+  {
+   "id": "air_space_closed",
+   "name": "Closed air space (empty framed cavity)",
+   "r_value_hr_ft2_f_btu": 1.0,
+   "use": "cavity",
+   "source": "OpenStudio-HPXML materials.rb Material.AirCavityClosed (R-1.0 for any enclosed gap)",
+   "confidence": "default",
+   "note": "An uninsulated stud or joist cavity closed on both sides."
+  },
+  {
+   "id": "fiberglass_batt",
+   "name": "Fiberglass batt",
+   "r_per_inch_hr_ft2_f_btu_in": 3.2,
+   "use": "cavity insulation",
+   "source": "Typical published value; not yet checked against a citable open source [CONFIRM]",
+   "confidence": "estimated",
+   "note": "R-11 in a 3.5 in cavity, R-19 in 5.5 in; enter the rated R-value instead when known."
+  },
+  {
+   "id": "mineral_wool_batt",
+   "name": "Mineral wool batt",
+   "r_per_inch_hr_ft2_f_btu_in": 4.0,
+   "use": "cavity insulation",
+   "source": "Typical published value; not yet checked against a citable open source [CONFIRM]",
+   "confidence": "estimated"
+  },
+  {
+   "id": "cellulose_dense_pack",
+   "name": "Cellulose, dense-packed in a closed cavity",
+   "r_per_inch_hr_ft2_f_btu_in": 3.6,
+   "use": "cavity insulation",
+   "source": "Typical published value; not yet checked against a citable open source [CONFIRM]",
+   "confidence": "estimated"
+  },
+  {
+   "id": "cellulose_loose_fill",
+   "name": "Cellulose, loose fill (attic floor)",
+   "r_per_inch_hr_ft2_f_btu_in": 3.5,
+   "use": "attic insulation",
+   "source": "Typical published value; not yet checked against a citable open source [CONFIRM]",
+   "confidence": "estimated"
+  },
+  {
+   "id": "fiberglass_loose_fill",
+   "name": "Fiberglass, loose fill (attic floor)",
+   "r_per_inch_hr_ft2_f_btu_in": 2.5,
+   "use": "attic insulation",
+   "source": "Typical published value; not yet checked against a citable open source [CONFIRM]",
+   "confidence": "estimated"
+  },
+  {
+   "id": "vermiculite",
+   "name": "Vermiculite, loose fill",
+   "r_per_inch_hr_ft2_f_btu_in": 2.2,
+   "use": "attic insulation",
+   "source": "Typical published value; not yet checked against a citable open source [CONFIRM]",
+   "confidence": "estimated",
+   "note": "Often found in older attics; may contain asbestos."
+  },
+  {
+   "id": "spray_foam_closed_cell",
+   "name": "Spray polyurethane foam, closed cell",
+   "r_per_inch_hr_ft2_f_btu_in": 6.0,
+   "use": "cavity or roof-deck insulation",
+   "source": "Typical published value; not yet checked against a citable open source [CONFIRM]",
+   "confidence": "estimated"
+  },
+  {
+   "id": "spray_foam_open_cell",
+   "name": "Spray polyurethane foam, open cell",
+   "r_per_inch_hr_ft2_f_btu_in": 3.6,
+   "use": "cavity or roof-deck insulation",
+   "source": "Typical published value; not yet checked against a citable open source [CONFIRM]",
+   "confidence": "estimated"
+  },
+  {
+   "id": "rigid_foam_generic",
+   "name": "Rigid foam board (generic)",
+   "r_per_inch_hr_ft2_f_btu_in": 4.9,
+   "use": "continuous insulation",
+   "source": "OpenStudio-HPXML materials.rb (commit fb18723), conductivity k converted to R per inch = 1/k",
+   "confidence": "default"
+  },
+  {
+   "id": "xps_board",
+   "name": "Extruded polystyrene (XPS) board",
+   "r_per_inch_hr_ft2_f_btu_in": 5.0,
+   "use": "continuous insulation",
+   "source": "Typical published value; not yet checked against a citable open source [CONFIRM]",
+   "confidence": "estimated"
+  },
+  {
+   "id": "eps_board",
+   "name": "Expanded polystyrene (EPS) board",
+   "r_per_inch_hr_ft2_f_btu_in": 4.0,
+   "use": "continuous insulation",
+   "source": "Typical published value; not yet checked against a citable open source [CONFIRM]",
+   "confidence": "estimated"
+  },
+  {
+   "id": "polyiso_board",
+   "name": "Polyisocyanurate board, foil faced",
+   "r_per_inch_hr_ft2_f_btu_in": 6.0,
+   "use": "continuous insulation",
+   "source": "Typical published value; not yet checked against a citable open source [CONFIRM]",
+   "confidence": "estimated"
+  },
+  {
+   "id": "wood_siding",
+   "name": "Wood siding or clapboard",
+   "r_per_inch_hr_ft2_f_btu_in": 1.408,
+   "typical_thickness_in": 0.75,
+   "use": "cladding",
+   "source": "OpenStudio-HPXML materials.rb (commit fb18723), conductivity k converted to R per inch = 1/k",
+   "confidence": "default"
+  },
+  {
+   "id": "vinyl_or_aluminum_siding",
+   "name": "Vinyl or aluminum siding (hollow backed)",
+   "r_per_inch_hr_ft2_f_btu_in": 1.613,
+   "typical_thickness_in": 0.375,
+   "use": "cladding",
+   "source": "OpenStudio-HPXML materials.rb (commit fb18723), conductivity k converted to R per inch = 1/k",
+   "confidence": "default"
+  },
+  {
+   "id": "fiber_cement_siding",
+   "name": "Fiber-cement siding",
+   "r_per_inch_hr_ft2_f_btu_in": 0.559,
+   "typical_thickness_in": 0.375,
+   "use": "cladding",
+   "source": "OpenStudio-HPXML materials.rb (commit fb18723), conductivity k converted to R per inch = 1/k",
+   "confidence": "default"
+  },
+  {
+   "id": "hardboard_siding",
+   "name": "Hardboard (Masonite) siding",
+   "r_per_inch_hr_ft2_f_btu_in": 1.449,
+   "typical_thickness_in": 0.5,
+   "use": "cladding",
+   "source": "OpenStudio-HPXML materials.rb (commit fb18723), conductivity k converted to R per inch = 1/k",
+   "confidence": "default"
+  },
+  {
+   "id": "asbestos_cement_shingle",
+   "name": "Asbestos-cement shingle siding",
+   "r_per_inch_hr_ft2_f_btu_in": 0.238,
+   "typical_thickness_in": 0.25,
+   "use": "cladding",
+   "source": "OpenStudio-HPXML materials.rb (commit fb18723), conductivity k converted to R per inch = 1/k",
+   "confidence": "default"
+  },
+  {
+   "id": "stucco",
+   "name": "Stucco",
+   "r_per_inch_hr_ft2_f_btu_in": 0.222,
+   "typical_thickness_in": 1.0,
+   "use": "cladding",
+   "source": "OpenStudio-HPXML materials.rb (commit fb18723), conductivity k converted to R per inch = 1/k",
+   "confidence": "default"
+  },
+  {
+   "id": "brick",
+   "name": "Brick",
+   "r_per_inch_hr_ft2_f_btu_in": 0.182,
+   "typical_thickness_in": 4.0,
+   "use": "cladding or structure",
+   "source": "OpenStudio-HPXML materials.rb (commit fb18723), conductivity k converted to R per inch = 1/k",
+   "confidence": "default"
+  },
+  {
+   "id": "stone",
+   "name": "Stone",
+   "r_per_inch_hr_ft2_f_btu_in": 0.08,
+   "typical_thickness_in": 1.0,
+   "use": "cladding or structure",
+   "source": "OpenStudio-HPXML materials.rb (commit fb18723), conductivity k converted to R per inch = 1/k",
+   "confidence": "default"
+  },
+  {
+   "id": "concrete",
+   "name": "Concrete",
+   "r_per_inch_hr_ft2_f_btu_in": 0.08,
+   "use": "structure",
+   "source": "OpenStudio-HPXML materials.rb (commit fb18723), conductivity k converted to R per inch = 1/k",
+   "confidence": "default"
+  },
+  {
+   "id": "concrete_block_hollow",
+   "name": "Concrete block, hollow core",
+   "r_per_inch_hr_ft2_f_btu_in": 0.2,
+   "typical_thickness_in": 8.0,
+   "use": "structure",
+   "source": "OpenStudio-HPXML materials.rb FoundationWallMaterial (k = 5.0, derived by NREL from NCMA TEK data)",
+   "confidence": "default"
+  },
+  {
+   "id": "straw_bale",
+   "name": "Straw bale",
+   "r_per_inch_hr_ft2_f_btu_in": 2.4,
+   "use": "structure",
+   "source": "OpenStudio-HPXML materials.rb (commit fb18723), conductivity k converted to R per inch = 1/k",
+   "confidence": "default"
+  },
+  {
+   "id": "asphalt_shingles_on_deck",
+   "name": "Asphalt shingles",
+   "r_per_inch_hr_ft2_f_btu_in": 0.887,
+   "typical_thickness_in": 0.25,
+   "use": "roofing",
+   "source": "OpenStudio-HPXML materials.rb RoofMaterialAndSheathing (k = 1.128)",
+   "confidence": "default"
+  },
+  {
+   "id": "wood_shingles_roof",
+   "name": "Wood shingles or shakes",
+   "r_per_inch_hr_ft2_f_btu_in": 1.408,
+   "typical_thickness_in": 0.5,
+   "use": "roofing",
+   "source": "Typical published value; not yet checked against a citable open source [CONFIRM]",
+   "confidence": "estimated"
+  },
+  {
+   "id": "metal_roofing",
+   "name": "Metal roofing",
+   "r_value_hr_ft2_f_btu": 0.0,
+   "typical_thickness_in": 0.02,
+   "use": "roofing",
+   "source": "OpenStudio-HPXML materials.rb RoofMaterialAndSheathing (k = 346.9; negligible resistance)",
+   "confidence": "default"
+  },
+  {
+   "id": "carpet_and_pad",
+   "name": "Carpet with pad",
+   "r_value_hr_ft2_f_btu": 2.08,
+   "typical_thickness_in": 0.5,
+   "use": "floor covering",
+   "source": "OpenStudio-HPXML materials.rb Material.CoveringBare (R-2.08 carpet)",
+   "confidence": "default"
+  },
+  {
+   "id": "hardwood_flooring",
+   "name": "Hardwood flooring",
+   "r_per_inch_hr_ft2_f_btu_in": 1.249,
+   "typical_thickness_in": 0.75,
+   "use": "floor covering",
+   "source": "OpenStudio-HPXML materials.rb (commit fb18723), conductivity k converted to R per inch = 1/k",
+   "confidence": "default"
+  }
+ ]
+}

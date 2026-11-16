@@ -1,0 +1,125 @@
+{
+ "_about": "Window glazing presets (whole-window U-factor in Btu/h-ft2-F and solar heat gain coefficient). A storm window over a single pane is entered as the single-pane preset plus storm_window: clear (the engine adjusts U and SHGC). Skylights: enter U-factor and SHGC directly.",
+ "glazing": [
+  {
+   "id": "single_clear_wood",
+   "name": "Single pane, clear, wood or vinyl frame",
+   "u_factor_btu_hr_ft2_f": 0.89,
+   "shgc": 0.64,
+   "glass_layers": 1,
+   "glass_type": "clear",
+   "source": "OpenStudio-HPXML defaults.rb get_window_ufactor_shgc (commit fb18723), which cites LBNL Home Energy Saver window construction types",
+   "confidence": "default"
+  },
+  {
+   "id": "single_clear_metal",
+   "name": "Single pane, clear, aluminum frame",
+   "u_factor_btu_hr_ft2_f": 1.27,
+   "shgc": 0.75,
+   "glass_layers": 1,
+   "glass_type": "clear",
+   "source": "OpenStudio-HPXML defaults.rb get_window_ufactor_shgc (commit fb18723), which cites LBNL Home Energy Saver window construction types",
+   "confidence": "default"
+  },
+  {
+   "id": "single_tinted_wood",
+   "name": "Single pane, tinted, wood or vinyl frame",
+   "u_factor_btu_hr_ft2_f": 0.89,
+   "shgc": 0.54,
+   "glass_layers": 1,
+   "glass_type": "tinted",
+   "source": "OpenStudio-HPXML defaults.rb get_window_ufactor_shgc (commit fb18723), which cites LBNL Home Energy Saver window construction types",
+   "confidence": "default"
+  },
+  {
+   "id": "double_clear_wood",
+   "name": "Double pane, clear, wood or vinyl frame",
+   "u_factor_btu_hr_ft2_f": 0.51,
+   "shgc": 0.56,
+   "glass_layers": 2,
+   "glass_type": "clear",
+   "source": "OpenStudio-HPXML defaults.rb get_window_ufactor_shgc (commit fb18723), which cites LBNL Home Energy Saver window construction types",
+   "confidence": "default"
+  },
+  {
+   "id": "double_clear_metal",
+   "name": "Double pane, clear, aluminum frame",
+   "u_factor_btu_hr_ft2_f": 0.81,
+   "shgc": 0.67,
+   "glass_layers": 2,
+   "glass_type": "clear",
+   "source": "OpenStudio-HPXML defaults.rb get_window_ufactor_shgc (commit fb18723), which cites LBNL Home Energy Saver window construction types",
+   "confidence": "default"
+  },
+  {
+   "id": "double_clear_metal_thermal_break",
+   "name": "Double pane, clear, aluminum frame with thermal break",
+   "u_factor_btu_hr_ft2_f": 0.6,
+   "shgc": 0.67,
+   "glass_layers": 2,
+   "glass_type": "clear",
+   "source": "OpenStudio-HPXML defaults.rb get_window_ufactor_shgc (commit fb18723), which cites LBNL Home Energy Saver window construction types",
+   "confidence": "default"
+  },
+  {
+   "id": "double_tinted_wood",
+   "name": "Double pane, tinted, wood or vinyl frame",
+   "u_factor_btu_hr_ft2_f": 0.51,
+   "shgc": 0.46,
+   "glass_layers": 2,
+   "glass_type": "tinted",
+   "source": "OpenStudio-HPXML defaults.rb get_window_ufactor_shgc (commit fb18723), which cites LBNL Home Energy Saver window construction types",
+   "confidence": "default"
+  },
+  {
+   "id": "double_low_e_wood",
+   "name": "Double pane, low-e (insulating), wood or vinyl frame",
+   "u_factor_btu_hr_ft2_f": 0.42,
+   "shgc": 0.52,
+   "glass_layers": 2,
+   "glass_type": "low_e",
+   "source": "OpenStudio-HPXML defaults.rb get_window_ufactor_shgc (commit fb18723), which cites LBNL Home Energy Saver window construction types",
+   "confidence": "default"
+  },
+  {
+   "id": "double_low_e_argon_wood",
+   "name": "Double pane, low-e (insulating), argon, wood or vinyl frame",
+   "u_factor_btu_hr_ft2_f": 0.39,
+   "shgc": 0.52,
+   "glass_layers": 2,
+   "glass_type": "low_e",
+   "source": "OpenStudio-HPXML defaults.rb get_window_ufactor_shgc (commit fb18723), which cites LBNL Home Energy Saver window construction types",
+   "confidence": "default"
+  },
+  {
+   "id": "double_low_e_solar_control_wood",
+   "name": "Double pane, low-e (solar control), wood or vinyl frame",
+   "u_factor_btu_hr_ft2_f": 0.39,
+   "shgc": 0.31,
+   "glass_layers": 2,
+   "glass_type": "low_e_low_solar",
+   "source": "OpenStudio-HPXML defaults.rb get_window_ufactor_shgc (commit fb18723), which cites LBNL Home Energy Saver window construction types",
+   "confidence": "default"
+  },
+  {
+   "id": "double_low_e_solar_control_argon_wood",
+   "name": "Double pane, low-e (solar control), argon, wood or vinyl frame",
+   "u_factor_btu_hr_ft2_f": 0.36,
+   "shgc": 0.31,
+   "glass_layers": 2,
+   "glass_type": "low_e_low_solar",
+   "source": "OpenStudio-HPXML defaults.rb get_window_ufactor_shgc (commit fb18723), which cites LBNL Home Energy Saver window construction types",
+   "confidence": "default"
+  },
+  {
+   "id": "triple_low_e_argon_wood",
+   "name": "Triple pane, low-e, argon, wood or vinyl frame",
+   "u_factor_btu_hr_ft2_f": 0.27,
+   "shgc": 0.31,
+   "glass_layers": 3,
+   "glass_type": "low_e",
+   "source": "OpenStudio-HPXML defaults.rb get_window_ufactor_shgc (commit fb18723), which cites LBNL Home Energy Saver window construction types",
+   "confidence": "default"
+  }
+ ]
+}

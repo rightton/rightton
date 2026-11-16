@@ -234,3 +234,25 @@ def cooling_duct_load(*, bldg, system, load_sens_btuh, load_lat_btuh, design_tem
         total_next = sens_next + lat_next
         delta = (total_next - total_prev) / total_prev
     return sens_next - load_sens_btuh, lat_next - load_lat_btuh
+
+
+def duct_effective_r_value(nominal_r: float, duct_type: str, rectangular_frac: float) -> float:
+    """Effective R-value of a duct (air films, and the thinning of insulation
+    wrapped around round ducts, included) from the R-value printed on its insulation.
+
+    Source: Defaults.get_duct_effective_r_value in OS-HPXML defaults.rb (ducts not
+    buried in attic insulation), which cites Palmiter & Kruse 2006, "True R-Values
+    of Round Residential Ductwork", and ASHRAE HoF for bare ducts (R-1.7).
+    """
+    if nominal_r <= 0:
+        return 1.7
+    d_round = 6.0 if duct_type == "supply" else 14.0  # in, assumed average diameter
+    f_round = 1.0 - rectangular_frac
+    r_ext = 0.667  # exterior air film
+    r_int_rect = 0.333  # interior film, rectangular duct
+    r_int_round = 0.3429 * d_round**0.1974  # interior film, round duct
+    t = nominal_r / 2.8  # insulation thickness, in (R-2.8 per inch fiberglass)
+    r_actual = nominal_r / t * (d_round / 2.0) * math.log(1.0 + (2.0 * t) / d_round)
+    r_rect = r_int_rect + nominal_r + r_ext
+    r_round = r_int_round + r_actual + r_ext * (d_round / (d_round + 2 * t))
+    return round(1.0 / (rectangular_frac / r_rect + f_round / r_round), 2)
