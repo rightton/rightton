@@ -336,7 +336,9 @@ def load(path, epw_dir) -> M.Building:
         if bldg.wall_by_id(wall).outside not in (M.OUTSIDE, M.GROUND):
             # The reference gives no load to a window in a wall that faces another
             # space; RightTon does (see RESULTS.md, known differences). Left out here
-            # so the two engines are compared on the same inputs.
+            # so the two engines are compared on the same inputs; its area still
+            # comes off the wall, as it does in the reference.
+            bldg.wall_by_id(wall).area_ft2 -= _num(el, "Area")
             continue
         shade = el.find("InteriorShading")
         ext = el.find("ExteriorShading")
