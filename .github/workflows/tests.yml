@@ -1,15 +1,44 @@
 name: tests
 on: [push, pull_request]
 jobs:
-  test:
+  core:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install pytest
-      - name: Equation tests and reference snapshot
+      # PyYAML is needed to read .rtn.yaml files; jsonschema only cross-checks the schema in tests
+      - run: pip install pytest pyyaml jsonschema
+      - name: Equation tests, house-file format tests and reference snapshot
         run: python -m pytest core
       - name: Reference comparison report
         run: python validation/compare.py
+      - name: Generated documents are up to date
+        run: python tools/gen_format_docs.py --check
+      - name: Examples validate
+        run: |
+          cd core
+          for f in ../examples/*.rtn.*; do python -m rightton.validate "$f"; done
+  app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+        working-directory: app
+      - name: Type-check and build the web app
+        run: npm run build
+        working-directory: app
+      - name: End-to-end test in a headless browser
+        working-directory: app
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+          npx vite preview --port 4173 --strictPort &
+          sleep 3
+          node tests/e2e.cjs http://localhost:4173/ "$RUNNER_TEMP"

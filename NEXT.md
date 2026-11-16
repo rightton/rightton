@@ -1,42 +1,65 @@
 # Next steps
 
-State on 2026-11-15: build priorities 1-3 of SPEC.md are done and passing.
-`python -m pytest core` (187 tests) and `python validation/compare.py`
-(121 snapshot houses) both pass. The interface (priority 4) has not been started.
+State on 2026-11-16: SPEC.md build priorities 1 to 6 are built. `python -m pytest core` (256 tests),
+`python validation/compare.py` (129 snapshot houses, all pass) and the browser end-to-end test
+(`app/tests/e2e.cjs`) pass locally.
 
-## Before or alongside the interface (priority 4)
+## To put the web app online (needs a repository admin; an agent on a feature branch cannot do it)
 
-1. **Old-house stress cases (SPEC validation step 3).** Write HPXML files for:
-   uninsulated balloon-frame walls, single-pane windows behind a deep porch,
-   raised floor over a vented crawlspace, conditioned (roof-insulated unvented)
-   attic with ducts in it. Run them through `validation/run_reference.sh` and add
-   them to the snapshot. This is the first test of the cases the tool exists for.
-2. **HPXML export** (SPEC outputs): the reverse of `validation/hpxml_reader.py`,
-   so any RightTon project can be checked against the reference engine.
-3. **Project file (JSON) load/save** for `rightton.model.Building`, with the
-   per-input default / source / confidence flags SPEC.md asks for. The model
-   currently carries values only.
-4. **Defaults RightTon must own**, since the comparison used the reference's:
-   internal gains (the reference uses 2400 Btu/h, or 3600 with more than one refrigerator/freezer),
-   occupants (bedrooms + 1), duct surface areas and effective R-value, shielding
-   class, infiltration height and volume.
-5. **Pyodide check**: the core has no dependencies beyond the standard library,
-   but `weather.py` finds `data/ashrae622_wsf.csv` by file path; package the data
-   file with the wheel before loading it in the browser.
-6. **A results-to-report layer**: ranked component list, sensible heat ratio,
-   tons, and the ACH50 -> design airflow steps (already in `Results.infiltration`).
+1. Merge this branch to `main`.
+2. In the repository: Settings > Pages > Build and deployment > Source: **GitHub Actions**.
+3. The `pages` workflow (`.github/workflows/pages.yml`) then builds `app/` and publishes it at
+   <https://rightton.github.io/rightton/> on every push to `main`. The README already links there.
+4. Check the first `pages` run. [CONFIRM] it has not been run yet, so the workflow itself is untested.
 
-## Method gaps to close (each is listed in validation/RESULTS.md)
+## Known gaps, most important first
 
-- ERV/HRV: port `Airflow.calc_hrv_erv_effectiveness` so rated efficiencies can be entered (5 skipped houses).
-- Ventilation through the air handler (CFIS): port `apply_hvac_cfis_loads` (14 skipped houses).
-- More than one heating or cooling system per zone, and systems serving part of the load (22 skipped houses).
-- User-assigned infiltration share per zone (SPEC inputs table).
-- Dehumidifier heat as its own reported line (today it is entered as room internal sensible gain).
-- Roof interior air film by pitch in `assemblies.py` ([CONFIRM]).
-- Sensitivity ranges for the "input confidence" output.
+### Things that affect answers
+
+- **Materials still marked [CONFIRM].** 14 entries in `data/materials.json` (plaster on lath, batts, loose
+  fill, spray foam, XPS/EPS/polyiso, wood shingles) are typical values from memory, flagged `estimated`
+  in the file and in the app. Tie each to a citable open source or replace it.
+- **Weather stations: 22 only** (`data/weather_stations.json`, the EPW files shipped with the reference
+  engine). Anywhere else needs an EPW file loaded in the app. Build a larger table with
+  `tools/build_weather_stations.py` from an open EPW collection.
+- **The layer builder is still validated by hand calculation only** (the reference takes finished
+  R-values). Roof interior air film by pitch is a [CONFIRM] in `core/rightton/assemblies.py`.
+- **RightTon-only features have no reference to compare with**: porch as a space, windows facing a
+  space, sealed attic as conditioned space, zone-to-zone transfer, equipment heat line, user infiltration
+  shares. All are hand-calculation tested; see validation/RESULTS.md.
+- **Not ported from the reference**: ERV/HRV rated-efficiency conversion (effectiveness is entered
+  directly), ventilation through the air handler (CFIS), two heating or two cooling systems in one
+  zone, systems serving part of a zone, evaporative coolers, tabulated default duct loads.
+- **Supply registers and returns are recorded but not used**: room airflow (cfm per room) is not
+  calculated yet (SPEC "Later"). The checker only warns about rooms with no register.
+
+### Format and tools
+
+- **HPXML export** (SPEC outputs) is not built; only HPXML import exists, in `validation/hpxml_reader.py`.
+- **The LLM guide was tested once, with one model** (docs/LLM-GUIDE-TEST.md), and edited afterwards
+  without a re-test. Repeat with other models and a harder house (two zones, basement, garage).
+- **The app rewrites number spelling on save** (`8.0` becomes `8`); the data is the same. The Python
+  tools round-trip JSON byte for byte.
+- **Format converter for a future major version**: nothing needed until 2.0.
+
+### Interface (priority 6 leftovers and priority 7)
+
+- No printable report yet (priority 7); the page has basic print styles only.
+- Scenario changes are edited as path/value rows. Friendlier pickers ("replace this assembly",
+  "add storm windows to these openings") would help homeowners.
+- "How much the answer moves if each default changes" (SPEC input confidence, shown as a load range) is
+  not built; the app lists which inputs are defaults, estimates or measurements.
+- No floor-plan or DXF import (priority 7). `outline_ft` is carried in the format but unused.
+- Accessibility has had no audit beyond keyboard focus styles and labels. [CONFIRM] with a screen reader.
+- The first load downloads about 14 MB (the Python runtime); it is cached afterwards. No offline
+  (service worker) support yet.
+- End-to-end test covers one desktop and one phone viewport in Chromium only. [CONFIRM] Safari and Firefox.
 
 ## Housekeeping
 
-- `.github/workflows/tests.yml` runs the tests and the snapshot comparison on every push.
-- The reference clone and OpenStudio install live outside the repo; nothing from them is needed to run the tests.
+- CI (`.github/workflows/tests.yml`) runs the Python tests, the reference snapshot, the generated-docs
+  check, example validation, and the app build plus browser test. It failed on GitHub for the first
+  house-file commits because PyYAML was not installed there; fixed in the workflow.
+- The reference engine (OpenStudio 3.11.0 + OpenStudio-HPXML fb18723) lives outside the repo; it is only
+  needed to regenerate the snapshot (`validation/run_reference.sh`, `validation/stress/make_stress_cases.py`).
+- After changing the schema or data files: `python tools/gen_format_docs.py`.
