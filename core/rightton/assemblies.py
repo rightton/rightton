@@ -18,6 +18,7 @@ cites as ASHRAE Handbook of Fundamentals 2005, chapter 25, Table 1
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -36,8 +37,24 @@ _INDOOR_FILM = {
     "wall": FILM_INDOOR_WALL,
     "ceiling": FILM_INDOOR_HORIZ_AVERAGE,
     "floor": FILM_INDOOR_FLOOR_DOWN,
-    "roof": FILM_INDOOR_HORIZ_AVERAGE,  # [CONFIRM] reference varies this with roof pitch
+    "roof": FILM_INDOOR_HORIZ_AVERAGE,  # flat roof; sloped roofs use roof_interior_film_r()
 }
+
+
+def roof_interior_film_r(pitch_rise_per_12: float) -> float:
+    """Interior air film R-value (hr-ft2-F/Btu) under a roof of the given pitch.
+
+    Source: OpenStudio-HPXML materials.rb, Material.AirFilmIndoorRoof (BSD-style
+    license, see core/NOTICE-OpenStudio-HPXML.md): correlations NREL fitted to the
+    still-air film values of ASHRAE Handbook of Fundamentals 2005, chapter 25,
+    table 1, which lists 0, 45 and 90 degrees. The average of heat flow up and
+    heat flow down is used, since the roof can be hotter or colder than the room.
+    At 0 degrees this is (0.61 + 0.92) / 2 = 0.765, the flat-ceiling value.
+    """
+    angle_deg = math.degrees(math.atan(pitch_rise_per_12 / 12.0))
+    r_up = 0.002 * math.exp(0.0398 * angle_deg) + 0.608  # 0.62 at 45 degrees
+    r_down = 0.32 * math.exp(-0.0154 * angle_deg) + 0.6  # 0.76 at 45 degrees
+    return (r_up + r_down) / 2.0
 
 
 @dataclass
@@ -79,14 +96,17 @@ class Assembly:
     position: str = "wall"  # wall, ceiling, floor, roof
     framing_fraction: float = 0.0  # share of area that is framing (0..1)
     exposed_to_wind: bool = True  # False when the far side is an attic, crawlspace, etc.
+    roof_pitch_rise_per_12: float = 0.0  # roofs only: sets the interior air film
 
     @property
     def film_inside_r(self) -> float:
+        if self.position == "roof":
+            return roof_interior_film_r(self.roof_pitch_rise_per_12)
         return _INDOOR_FILM[self.position]
 
     @property
     def film_outside_r(self) -> float:
-        return FILM_OUTDOOR if self.exposed_to_wind else _INDOOR_FILM[self.position]
+        return FILM_OUTDOOR if self.exposed_to_wind else self.film_inside_r
 
     def path_r_values(self) -> tuple[float, float]:
         """(cavity path R, framing path R), each including both air films."""

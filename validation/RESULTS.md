@@ -123,8 +123,6 @@ sizing, equipment capacity selection, and the tabulated default duct loads.
 
 ## Open items marked [CONFIRM] in the code
 
-- `core/rightton/assemblies.py`: the interior air film for a sloped roof is taken
-  as the horizontal-surface average; the reference varies it with pitch.
 - `core/rightton/airflow.py`: ERV/HRV effectiveness is a direct input; the
   reference derives it from rated recovery efficiency and fan power.
 

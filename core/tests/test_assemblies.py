@@ -2,7 +2,7 @@
 
 import pytest
 from conftest import approx
-from rightton.assemblies import Assembly, Layer
+from rightton.assemblies import Assembly, Layer, roof_interior_film_r
 
 
 def framed_wall(cavity_r_per_inch):
@@ -67,3 +67,20 @@ def test_layer_needs_a_resistance():
 def test_framing_fraction_must_be_below_one():
     with pytest.raises(ValueError):
         Assembly(name="bad", framing_fraction=1.0, layers=[Layer("x", r_value=1.0)]).u_factor()
+
+
+def test_roof_interior_film_by_pitch():
+    # Flat: up 0.002 * e^0 + 0.608 = 0.610; down 0.32 * e^0 + 0.6 = 0.920; average 0.765 (the ceiling value)
+    assert roof_interior_film_r(0.0) == approx(0.765)
+    # 12-in-12 = 45 degrees: up 0.002 * e^1.791 + 0.608 = 0.6200; down 0.32 * e^-0.693 + 0.6 = 0.7600; average 0.690
+    assert roof_interior_film_r(12.0) == approx(0.690, rel=1e-3)
+    # 6-in-12 = 26.565 degrees: up 0.002 * e^1.0573 + 0.608 = 0.61376; down 0.32 * e^-0.40910 + 0.6 = 0.81255; avg 0.71315
+    assert roof_interior_film_r(6.0) == approx(0.71315, rel=2e-4)
+
+
+def test_sloped_roof_assembly_uses_the_pitch_film():
+    # R-30 deck insulation on a 12-in-12 roof: 0.690 inside film + 30 + 0.21 outside film = 30.90
+    roof = Assembly(name="roof", position="roof", roof_pitch_rise_per_12=12.0, layers=[Layer("foam", r_value=30.0)])
+    assert roof.r_value() == approx(30.90, rel=1e-4)
+    # The same layers flat: 0.765 + 30 + 0.21 = 30.975
+    assert Assembly(name="roof", position="roof", layers=[Layer("foam", r_value=30.0)]).r_value() == approx(30.975)

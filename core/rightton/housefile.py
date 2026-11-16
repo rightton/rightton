@@ -224,7 +224,11 @@ class Conversion:
     assembly_r_values: dict[str, float] = field(default_factory=dict)  # by surface id
 
 
-def assembly_for_surface(asm: dict, surface_type: str, exposed_to_wind: bool) -> Assembly:
+DEFAULT_ROOF_PITCH = 6.0  # rise per 12, as in data/defaults.json (roof_pitch_rise_per_12)
+
+
+def assembly_for_surface(asm: dict, surface_type: str, exposed_to_wind: bool,
+                         roof_pitch_rise_per_12: float = DEFAULT_ROOF_PITCH) -> Assembly:
     """Build the layered Assembly for an assembly entry as used by one surface."""
     materials = data.materials()
     layers = []
@@ -259,14 +263,16 @@ def assembly_for_surface(asm: dict, surface_type: str, exposed_to_wind: bool) ->
     position = {"wall": "wall", "rim_joist": "wall", "foundation_wall": "wall", "roof": "roof",
                 "ceiling": "ceiling", "floor": "floor"}[surface_type]
     return Assembly(name=asm.get("name", asm["id"]), layers=layers, position=position,
-                    framing_fraction=asm.get("framing_frac", 0.0), exposed_to_wind=exposed_to_wind)
+                    framing_fraction=asm.get("framing_frac", 0.0), exposed_to_wind=exposed_to_wind,
+                    roof_pitch_rise_per_12=roof_pitch_rise_per_12 if position == "roof" else 0.0)
 
 
-def assembly_r_value(asm: dict, surface_type: str, exposed_to_wind: bool) -> float:
+def assembly_r_value(asm: dict, surface_type: str, exposed_to_wind: bool,
+                     roof_pitch_rise_per_12: float = DEFAULT_ROOF_PITCH) -> float:
     """R-value (hr-ft2-F/Btu, films included) of an assembly as used by one surface."""
     asm = plain(asm)
     if asm.get("layers"):
-        return assembly_for_surface(asm, surface_type, exposed_to_wind).r_value()
+        return assembly_for_surface(asm, surface_type, exposed_to_wind, roof_pitch_rise_per_12).r_value()
     if asm.get("r_value_hr_ft2_f_btu") is None:
         raise HouseFileError(f"Assembly {label(asm)} needs layers or r_value_hr_ft2_f_btu.")
     return asm["r_value_hr_ft2_f_btu"]
@@ -412,9 +418,9 @@ def to_building(house: dict, scenario: Optional[str] = None) -> Conversion:
                 conv.assembly_r_values[s["id"]] = r
         elif kind == "roof":
             asm = get_assembly(s)
-            r = assembly_r_value(asm, kind, True)
             if "pitch_rise_per_12" not in s:
                 default("roof_pitch_rise_per_12", f"surface {label(s)}")
+            r = assembly_r_value(asm, kind, True, s.get("pitch_rise_per_12", dflt["roof_pitch_rise_per_12"]["value"]))
             common["outside"] = M.OUTSIDE
             bldg.roofs.append(M.Roof(**common, r_value=r, roof_type=asm.get("roofing", "asphalt_shingles"),
                                      roof_color=asm.get("roof_color", "medium"),
