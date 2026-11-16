@@ -28,7 +28,7 @@ loosened.
 
 - Sample houses run through the reference engine: 504 (one, `base-misc-multiple-buildings`,
   needs a building id and was not run) -> 503 with output
-- **Compared: 441. Pass: 441. Fail: 0.**
+- **Compared: 441 sample houses plus 7 old-house stress cases = 448. Pass: 448. Fail: 0.**
 - No building, zone or room value differed from the reference by more than
   1 Btu/h, so every difference is rounding of the reported numbers.
 - Compared per house: 33 building-level values (13 heating, 15 sensible cooling,
@@ -45,6 +45,36 @@ tight/average/leaky table, exhaust/supply/balanced ventilation, duct location
 and leakage variants, and weather files from Miami to Duluth plus one
 southern-hemisphere file.
 
+## Old-house stress cases
+
+Seven houses built for both engines (`validation/stress/`, made by `make_stress_cases.py` from NREL's
+vented-crawlspace sample house; fictional). Run through the reference on 2026-11-16; all pass, and no
+value differs by more than 1 Btu/h.
+
+| Case | What is changed | Reference heating / sensible / latent (Btu/h) |
+| --- | --- | --- |
+| `stress-balloon-frame-walls` | Walls R-4.7 (plaster on lath, empty cavity, board sheathing, siding), bare rim joists | see `validation/reference/design_loads.json` |
+| `stress-single-pane-behind-porch` | Single-pane wood windows (U 0.89, SHGC 0.64), no blinds; south windows under an 8 ft porch roof | " |
+| `stress-raised-floor-vented-crawlspace` | Bare wood floor (R-3.7) over the vented crawlspace, 11 ft ceilings | " |
+| `stress-sealed-attic-with-ducts` | Unvented attic insulated at the roof deck (R-19.2) over a bare plaster ceiling, all ducts in the attic | " |
+| `stress-leaky-14-ach50` | Blower door 14 ACH50 | " |
+| `stress-old-house-all-denver` | All of the above, Denver weather | 62,154 / 32,542 / -1,473 |
+| `stress-old-house-all-houston` | All of the above, Houston weather | 38,607 / 36,284 / 5,291 |
+
+Two things these cases do **not** cover, because the reference has no equivalent:
+
+- **A porch as a space.** The reference models a porch roof as a window overhang, and so do these cases.
+  RightTon's house file can also describe an open porch as a space, which shades the wall and its
+  windows completely; that path is checked by hand calculation only.
+- **A sealed attic as conditioned space.** The reference treats a roof-insulated unvented attic as an
+  unconditioned space with a calculated temperature, and so do these cases. RightTon's house file can
+  instead declare the attic `conditioned` (inside the envelope), which removes duct losses entirely.
+  The two descriptions give different answers by design; which one is right depends on whether the
+  attic is really inside the air barrier.
+
+The assembly R-values in these cases were worked out by RightTon's layer builder and then given to both
+engines as numbers, so the layer builder itself is still checked only by hand calculation.
+
 ## What this comparison does and does not show
 
 It shows that the Python port reproduces the reference's design-load method.
@@ -57,10 +87,7 @@ It does not show, and nobody should read it as showing:
 2. **That RightTon's own defaults are right.** Inputs come from the reference's
    defaulted file (`in.xml`): duct areas, internal gains, occupants, shielding
    class and so on were filled in by the reference, not by RightTon.
-3. **Anything about the old-house cases in SPEC.md** (uninsulated balloon
-   framing, single-pane windows behind deep porches, conditioned attics). Those
-   need houses written for both engines; see NEXT.md.
-4. **That the method itself is accurate for a given real house.** Both engines
+3. **That the method itself is accurate for a given real house.** Both engines
    share one method and its tables.
 
 ## Known differences from the reference (by design)
@@ -104,7 +131,7 @@ sizing, equipment capacity selection, and the tabulated default duct loads.
 ## How to reproduce
 
 Without the reference engine (what the test suite and CI do), using the committed
-snapshot of 121 distinct houses and their reference loads:
+snapshot of 129 distinct houses and their reference loads:
 
 ```bash
 python validation/compare.py

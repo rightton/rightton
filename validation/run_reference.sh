@@ -6,6 +6,8 @@
 # https://github.com/NatLabRockies/OpenStudio-HPXML (commit fb18723 was used).
 #
 # Usage: validation/run_reference.sh <path to OpenStudio-HPXML clone> <output dir> [jobs]
+# Set INPUT_DIR to run a different folder of HPXML files (e.g. validation/stress)
+# instead of the clone's sample files; EPW files are still taken from the clone.
 set -euo pipefail
 REPO=$(realpath "$1"); OUT=$(realpath -m "$2"); JOBS=${3:-4}
 mkdir -p "$OUT"
@@ -16,4 +18,5 @@ run_one() {
   rm -f "$d/run/in.osm" "$d/run/in.epw"
 }
 export -f run_one; export REPO OUT
-ls "$REPO"/workflow/sample_files/*.xml | xargs -P "$JOBS" -I{} bash -c 'run_one {}'
+INPUT_DIR=$(realpath "${INPUT_DIR:-$REPO/workflow/sample_files}")
+ls "$INPUT_DIR"/*.xml | xargs -P "$JOBS" -I{} bash -c 'run_one {}'
