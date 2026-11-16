@@ -446,3 +446,41 @@ def test_house_written_by_a_language_model_from_the_guide_alone():
     base = calculate(housefile.to_building(house).building).building.heat_total
     for scenario in house["scenarios"]:
         assert calculate(housefile.to_building(house, scenario["id"]).building).building.heat_total < base
+
+
+def test_weather_station_table_loads_and_every_entry_has_valid_design_conditions():
+    stations = data.weather_stations()
+    assert len(stations) >= 1000                       # all usable U.S. TMY3 stations
+    assert "NREL" in data.weather_stations_source() and "TMY3" in data.weather_stations_source()
+    states = {s["state"] for s in stations.values()}
+    assert len(states) >= 52                           # 50 states, DC and territories
+    house = minimal()
+    for sid, s in stations.items():
+        assert sid == s["wmo"] and sid.isdigit(), sid
+        assert s["city"] and len(s["state"]) == 2, sid
+        # Physically sensible values (U.S. records: about -80 F and 134 F)
+        assert -65 <= s["heating_drybulb_f"] < s["cooling_drybulb_f"] <= 120, sid
+        assert 50 <= s["cooling_drybulb_f"], sid
+        assert s["heating_drybulb_f"] <= s["annual_avg_drybulb_f"] <= s["cooling_drybulb_f"], sid
+        assert 2 <= s["daily_temp_range_f"] <= 50, sid
+        assert 0.0005 < s["cooling_humidity_ratio"] < 0.03, sid      # lb water per lb dry air
+        assert 13 <= s["latitude_deg"] <= 72 and -180 <= s["longitude_deg"] <= 180, sid
+        assert -300 <= s["elevation_ft"] <= 12000, sid
+        assert 0.2 <= s["wsf"] <= 1.6, sid
+        assert len(s["monthly_avg_drybulb_f"]) == 12 and len(s["shallow_ground_monthly_f"]) == 12, sid
+        assert min(s["shallow_ground_monthly_f"]) <= s["annual_avg_drybulb_f"] + 0.5 <= max(s["shallow_ground_monthly_f"]) + 1, sid
+        assert s["design_source"] and s["source_file"].endswith(".epw"), sid
+        # ... and the engine can use it
+        house["location"] = {"weather_station_id": sid}
+        c = housefile.to_building(house).building.conditions
+        assert c.daily_temp_range in ("low", "medium", "high") and c.humidity_setpoint_frac in (0.45, 0.5), sid
+        assert -200 < c.humidity_difference_grains < 150, sid
+    # Stations whose source file is implausible are left out and listed with the reason
+    excluded = json.loads(data.data_path("weather_stations.json").read_text())["_excluded"]
+    assert all(e["reason"] for e in excluded.values()) and not set(excluded) & set(stations)
+
+
+def test_known_station_values():
+    # Denver Intl AP TMY3 header: 99 % heating -14.0 C = 6.8 F; 1 % cooling 33.2 C = 91.76 F
+    denver = data.weather_stations()["725650"]
+    assert (denver["heating_drybulb_f"], denver["cooling_drybulb_f"], denver["state"]) == (6.8, 91.76, "CO")

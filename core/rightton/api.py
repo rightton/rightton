@@ -177,7 +177,7 @@ def library() -> dict:
         "schema": data.schema(),
         "materials": list(data.materials().values()),
         "glazing": list(data.glazing().values()),
-        "stations": [{"id": sid, "name": s["city"].title(), "heating_f": s["heating_drybulb_f"],
+        "stations": [{"id": sid, "name": s["city"], "state": s.get("state", ""), "heating_f": s["heating_drybulb_f"],
                       "cooling_f": s["cooling_drybulb_f"], "latitude_deg": s["latitude_deg"]}
                      for sid, s in data.weather_stations().items()],
         "defaults": data.defaults(),

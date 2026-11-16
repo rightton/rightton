@@ -44,4 +44,9 @@ def defaults() -> dict[str, dict]:
 
 
 def weather_stations() -> dict[str, dict]:
+    """Design summaries of weather stations, keyed by WMO station number (as text)."""
     return _load("weather_stations.json")["stations"]
+
+
+def weather_stations_source() -> str:
+    return _load("weather_stations.json")["_source"]

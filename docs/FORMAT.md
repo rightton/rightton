@@ -827,35 +827,9 @@ Ids usable as `glazing` on a window.
 
 ## Weather stations
 
-Starter set. Any other location works by giving `location.design_conditions` instead (the web app can fill
+About a thousand U.S. stations (NREL TMY3) are built in: see [WEATHER-STATIONS.md](WEATHER-STATIONS.md) for the
+list of ids. Any other location works by giving `location.design_conditions` instead (the web app can fill
 those in from an EPW weather file).
-
-<!-- BEGIN GENERATED: stations -->
-| weather_station_id | Station | Heating design (F) | Cooling design (F) | Latitude |
-| --- | --- | --- | --- | --- |
-| `"723445"` | Fayetteville Drake Field | 15 | 93 | 36.0 |
-| `"722780"` | Phoenix Sky Harbor Intl Ap | 41 | 108 | 33.5 |
-| `"720533"` | Boulder.Muni.Ap | 10 | 91 | 40.0 |
-| `"724660"` | Colorado Springs Muni Ap | 6 | 88 | 38.8 |
-| `"725650"` | Denver Intl Ap | 7 | 92 | 39.8 |
-| `"724089"` | Wilmington New Castle Cnty Ap | 16 | 89 | 39.7 |
-| `"722020"` | Miami Intl Ap | 52 | 91 | 25.8 |
-| `"911820"` | Honolulu Intl Arpt | 63 | 89 | 21.3 |
-| `"725450"` | Cedar Rapids Municipal Ap | -4 | 89 | 41.9 |
-| `"724386"` | Lafayette Purdue Univ Ap | 4 | 90 | 40.4 |
-| `"724060"` | Baltimore Blt Washngtn Intl | 17 | 91 | 39.2 |
-| `"727450"` | Duluth International Arpt | -14 | 81 | 46.8 |
-| `"727720"` | Helena Regional Airport | -8 | 89 | 46.6 |
-| `"723140"` | Charlotte Douglas Intl Arpt | 25 | 92 | 35.2 |
-| `"745966"` | Cape May Co | 19 | 87 | 39.0 |
-| `"723860"` | Las Vegas Mccarran Intl Ap | 33 | 106 | 36.1 |
-| `"723544"` | Oklahoma City Wiley | 18 | 97 | 35.5 |
-| `"726980"` | Portland International Ap | 29 | 87 | 45.6 |
-| `"722590"` | Dallas Fort Worth Intl Ap | 26 | 98 | 32.9 |
-| `"722430"` | Houston Bush Intercontinental | 33 | 95 | 30.0 |
-| `"724699"` | Boulder | 10 | 91 | 40.1 |
-| `"688160"` | Cape Town | 41 | 84 | -34.0 |
-<!-- END GENERATED: stations -->
 
 ## Defaults
 

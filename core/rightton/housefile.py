@@ -12,6 +12,7 @@ loading and saving do not change it and unknown ``extensions`` survive.
 from __future__ import annotations
 
 import copy
+import dataclasses
 import json
 import math
 import re
@@ -531,7 +532,8 @@ def _conditions(location: dict, default, custom_default) -> M.DesignConditions:
                 f'location.weather_station_id "{station_id}" is not in RightTon\'s station list. Use a listed station, '
                 "or remove it and give heating_outdoor_temp_f, cooling_outdoor_temp_f, daily_temp_range, "
                 "humidity_difference_gr_lb and latitude_deg under location.design_conditions.")
-        wx = weather.Weather(**{k: v for k, v in station.items() if k != "source_file"})
+        wanted = {f.name for f in dataclasses.fields(weather.Weather)}
+        wx = weather.Weather(**{k: v for k, v in station.items() if k in wanted})
         if rh is None:
             default("cooling_indoor_humidity_frac", "house")
         c = weather.design_conditions(wx, heating_setpoint_f=heat_sp, cooling_setpoint_f=cool_sp,
