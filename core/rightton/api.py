@@ -13,7 +13,7 @@ import os
 import tempfile
 from typing import Optional
 
-from . import data, engine, housefile, validate as validator, weather
+from . import data, engine, housefile, sensitivity as sensitivity_module, validate as validator, weather
 from .housefile import HouseFileError
 
 # Display names and grouping of the load components, in report order.
@@ -145,6 +145,11 @@ def calculate(house: dict) -> dict:
     return out
 
 
+def sensitivity(house: dict) -> dict:
+    """Input confidence: load ranges from the inputs that were not measured (see rightton.sensitivity)."""
+    return sensitivity_module.analyze(house)
+
+
 def assembly(asm: dict) -> dict:
     """R-value of one assembly entry, with the layer-by-layer build-up, for the layer builder."""
     asm = housefile.plain(asm)
@@ -216,7 +221,7 @@ def design_conditions_from_epw(epw_text: str) -> dict:
 
 def call(name: str, payload_json: str) -> str:
     """Single text-in, text-out entry point: call one of the functions above by name."""
-    functions = {"validate": validate, "calculate": calculate, "assembly": assembly,
+    functions = {"validate": validate, "calculate": calculate, "assembly": assembly, "sensitivity": sensitivity,
                  "library": lambda _: library(), "design_conditions_from_epw": design_conditions_from_epw,
                  "to_json": lambda p: housefile.dumps(housefile.loads(p["text"], p.get("format", "json"))),
                  "to_yaml": lambda house: housefile.dumps(house, "yaml")}

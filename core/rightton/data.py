@@ -50,3 +50,8 @@ def weather_stations() -> dict[str, dict]:
 
 def weather_stations_source() -> str:
     return _load("weather_stations.json")["_source"]
+
+
+def input_ranges() -> dict[str, dict]:
+    """Plausible low/high ranges by field name, for the input-confidence load range."""
+    return _load("input_ranges.json")["rules"]

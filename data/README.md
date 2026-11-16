@@ -6,6 +6,7 @@ Every data file lists where its values come from.
 | --- | --- | --- |
 | `materials.json` | R-values of layer materials for the assembly builder | Three DOE/NREL-published data files, see "Materials" below |
 | `glazing.json` | Window glazing presets (U-factor, SHGC) | OpenStudio-HPXML `defaults.rb`, which cites LBNL Home Energy Saver |
+| `input_ranges.json` | How far each kind of unmeasured input is moved (low and high) to work out the load range shown as "input confidence" | RightTon's own judgment, not a published source [CONFIRM]; each rule says what it covers. Review these before relying on the ranges. |
 | `defaults.json` | Defaults RightTon applies to left-out inputs | Mostly OpenStudio-HPXML `defaults.rb`; each entry names its source |
 | `ashrae622_wsf.csv` | Weather and shielding factor (WSF) by weather-station WMO number, used to turn a leakage area into annual-average natural air changes | Copied unchanged from OpenStudio-HPXML (`HPXMLtoOpenStudio/resources/data/ashrae622_wsf.csv`, commit fb18723), BSD-style license, see `core/NOTICE-OpenStudio-HPXML.md`. NREL attributes the values to ASHRAE Standard 62.2. |
 

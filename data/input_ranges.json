@@ -1,0 +1,286 @@
+{
+ "_about": "How far RightTon moves each input that was not measured when it works out the load range shown in the results ('input confidence'). 'relative' 0.20 means -20 % and +20 %; 'absolute' means minus and plus that amount. Inputs marked measured are not varied. Field names not listed here are not varied. Compass directions (azimuth_deg) are treated as known.",
+ "_basis": "RightTon judgment of a plausible range for a value that was not measured; not from a published source [CONFIRM]",
+ "rules": {
+  "area_ft2": {
+   "kind": "relative",
+   "amount": 0.1,
+   "what": "areas taken from a sketch or tape measure"
+  },
+  "floor_area_ft2": {
+   "kind": "relative",
+   "amount": 0.1,
+   "what": "room floor areas"
+  },
+  "surface_area_ft2": {
+   "kind": "relative",
+   "amount": 0.25,
+   "what": "duct surface area"
+  },
+  "exposed_perimeter_ft": {
+   "kind": "relative",
+   "amount": 0.1,
+   "what": "slab edge length"
+  },
+  "volume_ft3": {
+   "kind": "relative",
+   "amount": 0.15,
+   "what": "air volumes"
+  },
+  "width_ft": {
+   "kind": "relative",
+   "amount": 0.05,
+   "what": "widths"
+  },
+  "height_ft": {
+   "kind": "relative",
+   "amount": 0.05,
+   "what": "heights"
+  },
+  "ceiling_height_ft": {
+   "kind": "relative",
+   "amount": 0.05,
+   "what": "ceiling heights"
+  },
+  "depth_ft": {
+   "kind": "relative",
+   "amount": 0.15,
+   "what": "overhang and insulation depths"
+  },
+  "depth_below_grade_ft": {
+   "kind": "absolute",
+   "amount": 0.5,
+   "what": "depth of a foundation wall below grade, ft",
+   "min": 0
+  },
+  "thickness_in": {
+   "kind": "relative",
+   "amount": 0.1,
+   "what": "layer and wall thicknesses"
+  },
+  "pitch_rise_per_12": {
+   "kind": "absolute",
+   "amount": 1.0,
+   "what": "roof pitch, inches of rise per 12",
+   "min": 0
+  },
+  "r_value_hr_ft2_f_btu": {
+   "kind": "relative",
+   "amount": 0.2,
+   "what": "R-values of assemblies, layers, doors and insulation"
+  },
+  "r_per_inch_hr_ft2_f_btu_in": {
+   "kind": "relative",
+   "amount": 0.2,
+   "what": "R per inch of a layer"
+  },
+  "framing_r_per_inch_hr_ft2_f_btu_in": {
+   "kind": "relative",
+   "amount": 0.1,
+   "what": "R per inch of framing lumber"
+  },
+  "insulation_r_value_hr_ft2_f_btu": {
+   "kind": "relative",
+   "amount": 0.25,
+   "what": "duct insulation R-value"
+  },
+  "effective_r_value_hr_ft2_f_btu": {
+   "kind": "relative",
+   "amount": 0.25,
+   "what": "duct effective R-value"
+  },
+  "framing_frac": {
+   "kind": "absolute",
+   "amount": 0.05,
+   "what": "share of area that is framing",
+   "min": 0,
+   "max": 0.5
+  },
+  "u_factor_btu_hr_ft2_f": {
+   "kind": "relative",
+   "amount": 0.15,
+   "what": "window and skylight U-factor"
+  },
+  "shgc": {
+   "kind": "relative",
+   "amount": 0.15,
+   "what": "solar heat gain coefficient",
+   "min": 0,
+   "max": 1
+  },
+  "coefficient_frac": {
+   "kind": "absolute",
+   "amount": 0.15,
+   "what": "shading coefficient",
+   "min": 0,
+   "max": 1
+  },
+  "coverage_frac": {
+   "kind": "absolute",
+   "amount": 0.25,
+   "what": "share of a window covered by shades",
+   "min": 0,
+   "max": 1
+  },
+  "solar_absorptance_frac": {
+   "kind": "absolute",
+   "amount": 0.15,
+   "what": "wall color (solar absorptance)",
+   "min": 0.1,
+   "max": 1
+  },
+  "air_changes_per_hr_at_50pa": {
+   "kind": "relative",
+   "amount": 0.25,
+   "what": "blower-door ACH50 that was not measured"
+  },
+  "airflow_cfm_at_50pa": {
+   "kind": "relative",
+   "amount": 0.25,
+   "what": "blower-door CFM50 that was not measured"
+  },
+  "natural_air_changes_per_hr": {
+   "kind": "relative",
+   "amount": 0.3,
+   "what": "natural air changes"
+  },
+  "leakage_area_in2": {
+   "kind": "relative",
+   "amount": 0.25,
+   "what": "leakage area"
+  },
+  "supply_leakage_cfm_at_25pa": {
+   "kind": "relative",
+   "amount": 0.5,
+   "what": "duct leakage"
+  },
+  "return_leakage_cfm_at_25pa": {
+   "kind": "relative",
+   "amount": 0.5,
+   "what": "duct leakage"
+  },
+  "supply_leakage_frac": {
+   "kind": "relative",
+   "amount": 0.5,
+   "what": "duct leakage",
+   "min": 0,
+   "max": 1
+  },
+  "return_leakage_frac": {
+   "kind": "relative",
+   "amount": 0.5,
+   "what": "duct leakage",
+   "min": 0,
+   "max": 1
+  },
+  "airflow_cfm": {
+   "kind": "relative",
+   "amount": 0.2,
+   "what": "ventilation airflow"
+  },
+  "sensible_recovery_frac": {
+   "kind": "absolute",
+   "amount": 0.1,
+   "what": "heat recovery effectiveness",
+   "min": 0,
+   "max": 1
+  },
+  "occupant_count": {
+   "kind": "absolute",
+   "amount": 1.0,
+   "what": "number of occupants",
+   "min": 0
+  },
+  "internal_sensible_gain_btu_hr": {
+   "kind": "relative",
+   "amount": 0.3,
+   "what": "appliance and lighting heat"
+  },
+  "internal_latent_gain_btu_hr": {
+   "kind": "relative",
+   "amount": 0.3,
+   "what": "appliance moisture"
+  },
+  "sensible_heat_btu_hr": {
+   "kind": "relative",
+   "amount": 0.3,
+   "what": "equipment heat"
+  },
+  "latent_heat_btu_hr": {
+   "kind": "relative",
+   "amount": 0.3,
+   "what": "equipment moisture"
+  },
+  "heating_setpoint_f": {
+   "kind": "absolute",
+   "amount": 2.0,
+   "what": "winter thermostat setting, F"
+  },
+  "cooling_setpoint_f": {
+   "kind": "absolute",
+   "amount": 2.0,
+   "what": "summer thermostat setting, F"
+  },
+  "heating_outdoor_temp_f": {
+   "kind": "absolute",
+   "amount": 3.0,
+   "what": "winter design temperature, F"
+  },
+  "cooling_outdoor_temp_f": {
+   "kind": "absolute",
+   "amount": 2.0,
+   "what": "summer design temperature, F"
+  },
+  "humidity_difference_gr_lb": {
+   "kind": "absolute",
+   "amount": 8.0,
+   "what": "outdoor-indoor moisture difference, grains/lb"
+  },
+  "cooling_indoor_humidity_frac": {
+   "kind": "absolute",
+   "amount": 0.05,
+   "what": "indoor relative humidity",
+   "min": 0.3,
+   "max": 0.65
+  },
+  "ground_conductivity_btu_hr_ft_f": {
+   "kind": "relative",
+   "amount": 0.4,
+   "what": "soil conductivity"
+  },
+  "shielding_class": {
+   "kind": "absolute",
+   "amount": 1.0,
+   "what": "wind shielding class",
+   "min": 1,
+   "max": 5
+  },
+  "glazing_u_factor": {
+   "kind": "relative",
+   "amount": 0.15,
+   "what": "U-factor taken from a glazing preset"
+  },
+  "glazing_shgc": {
+   "kind": "relative",
+   "amount": 0.15,
+   "what": "SHGC taken from a glazing preset",
+   "min": 0,
+   "max": 1
+  },
+  "material_r_value": {
+   "kind": "relative",
+   "amount": 0.2,
+   "what": "R-value of a layer taken from the materials list"
+  },
+  "material_r_value_estimated": {
+   "kind": "relative",
+   "amount": 0.3,
+   "what": "R-value of a layer whose material value is itself an estimate"
+  },
+  "no_interior_shading": {
+   "kind": "low_only",
+   "amount": 0.6,
+   "what": "windows with no blinds or curtains described: tested with shades that cut solar gain to 60 %"
+  }
+ }
+}
