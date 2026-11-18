@@ -162,6 +162,7 @@ export function App() {
         {ctx && lib && page !== "results" && <Editors page={page} ctx={ctx} lib={lib} out={out} sub={sub} setSub={(k, v) => setSub({ ...sub, [k]: v })} doc={doc} pickEpw={() => epwInput.current?.click()} go={setPage} />}
         <footer className="foot">
           <p><strong>A homeowner planning estimate, not a design for permits or rebates.</strong> Where those require an ACCA-approved load calculation, a contractor must provide one. RightTon is a residential heating and cooling load calculator based on published open methods; its calculation is checked against NREL’s OpenStudio-HPXML.</p>
+          <p className="about">An open-source alternative to Manual J load calculation software. Not affiliated with or approved by ACCA; Manual J® is a registered trademark of ACCA.</p>
           <p>Your house data stays on this device: it is kept in this browser and in the files you save. Nothing is uploaded. Format {lib?.format_version ?? ""} · <a href="https://github.com/rightton/rightton">Source and documentation</a></p>
         </footer>
       </main>
