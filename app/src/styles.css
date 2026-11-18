@@ -140,6 +140,7 @@ details[open] > summary { margin-bottom: .6rem; }
 .layer-n { width: 1.5rem; height: 1.5rem; border-radius: 50%; background: var(--brand-soft); color: var(--brand); font-size: .78rem; font-weight: 700; display: grid; place-items: center; }
 .layer-r { font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; } .layer-btns { display: flex; }
 .layer-fields { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: .5rem; margin-top: .5rem; align-items: end; }
+.preset-pick { max-width: 100%; min-width: 0; }
 .room-contents { margin-top: 1rem; border-top: 1px solid var(--line); padding-top: .8rem; }
 .room-contents h4 { margin: 0 0 .2rem; } .room-contents h5 { margin: .8rem 0 .35rem; font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
 .rc-item { border: 1px solid var(--line); border-radius: 9px; background: var(--surface-2); margin-bottom: .45rem; }

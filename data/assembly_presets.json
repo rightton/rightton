@@ -1,0 +1,116 @@
+{
+ "_about": "Ready-made assemblies the app can copy into a house file's assemblies library. Each layer uses a material from materials.json (whose source is cited there) or a framing entry from framing.json. Thicknesses are typical, not measured: measure your own wall where you can. Solid brick thickness: about 4 in per wythe (OS-HPXML uses 4.0 in for brick siding; a fired-clay brick is 3 5/8 in in the CEC Title 24 list, plus mortar); 8 in for two wythes and 12 in for three are nominal.",
+ "presets": [
+  {
+   "id": "brick-solid-2-wythe",
+   "name": "Solid brick, 2 wythes (about 8 in), bare inside",
+   "type": "wall",
+   "construction": "brick",
+   "cladding": "brick",
+   "notes": "Load-bearing brick two bricks thick, no interior finish (exposed brick).",
+   "layers": [
+    {
+     "material": "brick",
+     "thickness_in": 8
+    }
+   ]
+  },
+  {
+   "id": "brick-solid-3-wythe",
+   "name": "Solid brick, 3 wythes (about 12 in), bare inside",
+   "type": "wall",
+   "construction": "brick",
+   "cladding": "brick",
+   "notes": "Load-bearing brick three bricks thick, no interior finish.",
+   "layers": [
+    {
+     "material": "brick",
+     "thickness_in": 12
+    }
+   ]
+  },
+  {
+   "id": "brick-solid-plaster-direct",
+   "name": "Solid brick, 2 wythes, plaster applied directly",
+   "type": "wall",
+   "construction": "brick",
+   "cladding": "brick",
+   "notes": "Plaster troweled straight onto the inside of the brick.",
+   "layers": [
+    {
+     "material": "plaster_sand_aggregate",
+     "thickness_in": 0.75
+    },
+    {
+     "material": "brick",
+     "thickness_in": 8
+    }
+   ]
+  },
+  {
+   "id": "brick-solid-plaster-furred",
+   "name": "Solid brick, 2 wythes, plaster on lath over furring",
+   "type": "wall",
+   "construction": "brick",
+   "cladding": "brick",
+   "notes": "Wood lath and plaster on 1x2 furring strips at 16 in, leaving a 3/4 in air space against the brick.",
+   "framing": {
+    "lumber": "custom",
+    "width_in": 1.5,
+    "depth_in": 0.75,
+    "spacing_in": 16,
+    "allowance_frac": 0
+   },
+   "layers": [
+    {
+     "material": "plaster_on_wood_lath"
+    },
+    {
+     "name": "Furring air space",
+     "material": "air_space_closed",
+     "thickness_in": 0.75,
+     "framing_material": "softwood"
+    },
+    {
+     "material": "brick",
+     "thickness_in": 8
+    }
+   ]
+  },
+  {
+   "id": "brick-veneer-wood-frame",
+   "name": "Brick veneer over 2x4 wood frame, empty cavity",
+   "type": "wall",
+   "construction": "wood_stud",
+   "cladding": "brick",
+   "notes": "One wythe of brick (4 in) with an air gap, over board sheathing on 2x4 studs at 16 in. The stud cavity is empty: change its fill if it is insulated.",
+   "framing": {
+    "lumber": "2x4",
+    "spacing_in": 16
+   },
+   "layers": [
+    {
+     "material": "gypsum_board",
+     "thickness_in": 0.5
+    },
+    {
+     "name": "Stud cavity",
+     "material": "air_space_closed",
+     "thickness_in": 3.5,
+     "framing_material": "softwood"
+    },
+    {
+     "material": "board_sheathing"
+    },
+    {
+     "name": "Air gap behind veneer",
+     "material": "air_space_closed"
+    },
+    {
+     "material": "brick",
+     "thickness_in": 4
+    }
+   ]
+  }
+ ]
+}

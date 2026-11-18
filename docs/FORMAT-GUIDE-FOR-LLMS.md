@@ -246,6 +246,7 @@ Any material can go in any layer; any insulation can fill any framed cavity.
 | `gypsum_board` | Gypsum and plaster | Gypsum board (drywall) | 0.9 |  | 0.5 |
 | `plaster_on_wood_lath` | Gypsum and plaster | Plaster on wood lath |  | 0.51 | 0.875 |
 | `plaster_on_metal_lath` | Gypsum and plaster | Plaster on metal lath |  | 0.23 | 0.75 |
+| `plaster_sand_aggregate` | Gypsum and plaster | Plaster, sand aggregate (lime or cement, applied to masonry) | 0.199 |  | 0.75 |
 | `wood_paneling` | Wood | Wood paneling or boards (interior) | 1.249 |  | 0.75 |
 | `softwood` | Wood | Softwood lumber, boards, plywood, OSB | 1.249 |  |  |
 | `board_sheathing` | Wood | Board sheathing (3/4 in, straight or diagonal) | 1.249 |  | 0.75 |

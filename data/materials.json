@@ -47,6 +47,17 @@
    "confidence": "default"
   },
   {
+   "id": "plaster_sand_aggregate",
+   "name": "Plaster, sand aggregate (lime or cement, applied to masonry)",
+   "category": "gypsum_plaster",
+   "r_per_inch_hr_ft2_f_btu_in": 0.199,
+   "typical_thickness_in": 0.75,
+   "use": "interior finish on brick, stone or block",
+   "source": "NREL openstudio-standards, ashrae_90_1.materials.json (entries marked 'From CEC Title24 2013', the California Energy Commission's Title 24 2013 materials list): 'Plaster/Sand Aggregate - 1 in.', k = 5.0304 Btu-in/h-ft2-F, R per inch = 1/k = 0.199",
+   "confidence": "default",
+   "note": "Plaster troweled straight onto brick or stone, with no lath or furring. The typical thickness is a guess; measure at an outlet or switch box if you can."
+  },
+  {
    "id": "wood_paneling",
    "name": "Wood paneling or boards (interior)",
    "category": "wood",

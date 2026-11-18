@@ -125,6 +125,14 @@ const check = (cond, what) => { console.log(`${cond ? "ok  " : "FAIL"} ${what}`)
   await settled(page);
   await page.click('nav >> text="Assemblies"');
 
+  // Masonry presets copy into the assembly library and calculate
+  for (const [pid, want] of [["brick-veneer-wood-frame", "R-5.5"], ["brick-solid-3-wythe", "R-3.1"]]) {
+    await page.selectOption('select[aria-label="Add a ready-made assembly"]', pid);
+    await page.waitForFunction((w) => document.querySelector(".rbig")?.textContent === w && document.querySelector('.rbox[aria-busy="false"]'), want, { timeout: 30000 }).catch(() => undefined);
+    const got = await page.locator(".rbig").textContent();
+    check(got === want, `preset ${pid} loads into the assembly library and shows ${want} (${got})`);
+  }
+
   // Framing share from lumber and spacing (sunroom wall: 2x4 studs with an R-11 batt, typed share 30 %)
   await page.locator(".row").nth(1).click();
   await page.waitForSelector(".framing-panel");

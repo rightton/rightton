@@ -263,6 +263,7 @@ function Editors({ page, ctx, lib, out, sub, setSub, doc, pickEpw, go }: {
       hide: (a) => ["r_value_hr_ft2_f_btu", "framing_frac", "framing", ...(a.type === "wall" ? [] : ["construction", "cladding", "solar_absorptance_frac"]),
         ...(a.type === "roof" ? [] : ["roofing", "roof_color", "radiant_barrier"])],
       newItem: (_t, id) => ({ id, name: "New assembly", type: "wall", layers: [] }),
+      presets: lib.assembly_presets.map((x) => ({ id: x.id as string, name: x.name as string, item: x })),
       extra: (a, setA) => (<>
         {!Array.isArray(a.layers) && <div className="fields"><Field name="r_value_hr_ft2_f_btu" schema={itemSchema(root.properties!.assemblies).properties!.r_value_hr_ft2_f_btu} value={a.r_value_hr_ft2_f_btu} ctx={ctx} owner={a} required
           onChange={(v) => { const n = { ...a }; if (v === undefined) delete n.r_value_hr_ft2_f_btu; else n.r_value_hr_ft2_f_btu = v; setA(n); }} /></div>}

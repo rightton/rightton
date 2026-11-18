@@ -10,6 +10,7 @@ export type SectionProps = {
   summary: (item: Obj) => string; badge?: (item: Obj) => ReactNode; groupBy?: (item: Obj) => string;
   newItem: (type: string | undefined, id: string) => Obj; primary?: string[]; hide?: string[] | ((item: Obj) => string[]);
   extra?: (item: Obj, setItem: (item: Obj) => void) => ReactNode;
+  presets?: { id: string; name: string; item: Obj }[];  // ready-made items to copy in
 };
 
 export function SectionEditor(p: SectionProps) {
@@ -22,6 +23,13 @@ export function SectionEditor(p: SectionProps) {
   const add = (type?: string) => {
     const id = uniqueId(p.ctx.house, slug(type ?? p.singular));
     write([...items, p.newItem(type, id)]);
+    setSelected(id);
+  };
+  const addPreset = (pid: string) => {
+    const pre = p.presets?.find((x) => x.id === pid);
+    if (!pre) return;
+    const id = uniqueId(p.ctx.house, slug(pre.id));
+    write([...items, { ...structuredClone(pre.item), id }]);
     setSelected(id);
   };
   const setItem = (item: Obj) => { write(items.map((it, i) => (i === index ? item : it))); if (item.id !== selected) setSelected(item.id as string); };
@@ -45,6 +53,12 @@ export function SectionEditor(p: SectionProps) {
           {types.length > 1
             ? types.map((t) => <button key={t} className="btn small" onClick={() => add(t)}>+ {pretty(t)}</button>)
             : <button className="btn" onClick={() => add(types[0])}>+ Add {p.singular}</button>}
+          {p.presets && p.presets.length > 0 && (
+            <select aria-label={`Add a ready-made ${p.singular}`} className="preset-pick" value="" onChange={(e) => addPreset(e.target.value)}>
+              <option value="">Add a ready-made {p.singular}…</option>
+              {p.presets.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+            </select>
+          )}
         </div>
         {items.length === 0 && <p className="empty">None yet.</p>}
         {groups.map((g) => (

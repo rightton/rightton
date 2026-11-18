@@ -190,6 +190,7 @@ def library() -> dict:
         "materials": list(data.materials().values()),
         "material_categories": [{"id": cid, "name": name} for cid, name in data.material_categories().items()],
         "glazing": list(data.glazing().values()),
+        "assembly_presets": data.assembly_presets(),
         "framing": {"lumber": data.framing()["lumber"], "spacings_in": data.framing()["spacings_in"]},
         "stations": [{"id": sid, "name": s["city"], "state": s.get("state", ""), "heating_f": s["heating_drybulb_f"],
                       "cooling_f": s["cooling_drybulb_f"], "latitude_deg": s["latitude_deg"]}

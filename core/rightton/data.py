@@ -51,6 +51,11 @@ def framing() -> dict:
     return _load("framing.json")
 
 
+def assembly_presets() -> list[dict]:
+    """Ready-made assemblies (data/assembly_presets.json) the app copies into a house file."""
+    return _load("assembly_presets.json")["presets"]
+
+
 def glazing() -> dict[str, dict]:
     return {g["id"]: g for g in _load("glazing.json")["glazing"]}
 
