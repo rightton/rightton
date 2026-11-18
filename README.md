@@ -4,7 +4,7 @@ Right-size your heating and cooling, and see what retrofits change.
 
 RightTon is a free, open-source residential heating and cooling load calculator for real houses, including old and unusual ones: custom wall and ceiling assemblies, real ceiling heights, measured blower-door leakage (ACH50), and side-by-side retrofit scenarios. Your house data stays on your device.
 
-An open-source alternative to Manual J load calculation software. Not affiliated with or approved by ACCA; Manual J® is a registered trademark of ACCA.
+An open-source alternative to Manual J load calculation software, for informational purposes only. Not affiliated with or approved by ACCA; Manual J® is a registered trademark of ACCA.
 
 **Use it:** <https://rightton.github.io/rightton/> (the web app; goes live once this work is merged to `main` and GitHub Pages is switched on, see [NEXT.md](NEXT.md)). It runs entirely in your browser: the calculation is the Python core compiled to run in the page, and no house data is uploaded.
 

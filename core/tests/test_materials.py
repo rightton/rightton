@@ -87,5 +87,6 @@ def test_mineral_wool_board_is_a_rigid_board():
     asm = {"id": "ci", "type": "wall", "layers": [{"material": "mineral_wool_board", "thickness_in": 1.5}]}
     built = housefile.assembly_for_surface(asm, "wall", True)
     assert built.layers[0].cavity_r == approx(6.3)
-    # Unconfirmed source: flagged so the app warns
-    assert m["confidence"] == "estimated" and "[CONFIRM]" in m["source"]
+    # ROCKWOOL Comfortboard 80 data sheet: RSI 0.74 m2-K/W per 25.4 mm -> 0.74 * 5.678 = R-4.20 per inch
+    assert m["r_per_inch_hr_ft2_f_btu_in"] == approx(0.74 * 5.678, rel=2e-3)
+    assert m["confidence"] == "default" and "ASTM C518" in m["source"]

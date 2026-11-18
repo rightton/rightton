@@ -218,9 +218,9 @@
    "r_per_inch_hr_ft2_f_btu_in": 4.2,
    "typical_thickness_in": 1.5,
    "use": "continuous insulation",
-   "source": "[CONFIRM] Manufacturer data sheets for rigid stone wool boards sold as exterior continuous insulation list R-4.2 to R-4.3 per inch (ASTM C518, 75 F mean temperature); e.g. Owens Corning Thermafiber RainBarrier data sheet (siplast.com document siplast-thermafiber-rainbarrier-cpds-siplic018) and ROCKWOOL Comfortboard 80. The lower figure is used. Seen in a web search summary on 2026-11-18; the data sheets themselves could not be opened from the build environment.",
-   "confidence": "estimated",
-   "note": "Rated R per inch varies with board density; enter the rated value from the product label if you have it."
+   "source": "ROCKWOOL Comfortboard 80 product data sheet: thermal resistance R-4.2 hr-ft2-F/Btu per inch at 75 F (RSI 0.74 m2-K/W per 25.4 mm at 24 C; 0.74 * 5.678 = 4.20), ASTM C518 (C177). Value quoted from the data sheet by the project maintainer on 2026-11-18. Brand named only as the source; the material entry is generic.",
+   "confidence": "default",
+   "note": "Rated R per inch varies with board density and product (denser boards for roofs are often slightly lower); enter the rated value from your product's label if it differs."
   },
   {
    "id": "wood_siding",

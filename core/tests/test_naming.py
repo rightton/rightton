@@ -4,8 +4,8 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-SENTENCE = ("An open-source alternative to Manual J load calculation software. Not affiliated with or approved by ACCA; "
-            "Manual J® is a registered trademark of ACCA.")
+SENTENCE = ("An open-source alternative to Manual J load calculation software, for informational purposes only. "
+            "Not affiliated with or approved by ACCA; Manual J® is a registered trademark of ACCA.")
 PUBLIC = [ROOT / "README.md", ROOT / "app" / "index.html", *sorted((ROOT / "app" / "src").rglob("*.ts*")),
           *sorted((ROOT / "docs").glob("*.md"))]
 
