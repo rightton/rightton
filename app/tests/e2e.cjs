@@ -52,6 +52,29 @@ const check = (cond, what) => { console.log(`${cond ? "ok  " : "FAIL"} ${what}`)
   await page.waitForSelector("text=no surface names this room");
   check(true, "a new room with no surfaces is flagged in plain English");
 
+  // Describe the new room without leaving the room view: a wall with a window, a ceiling and a floor
+  await page.click('nav >> text="Rooms"');
+  await page.locator(".row", { hasText: "New room" }).click();
+  await page.click('.room-contents button:text-is("+ Wall")');
+  await page.waitForSelector(".rc-item[open]");
+  await page.click('.rc-item[open] button:text-is("+ Window")');
+  await page.click('.room-contents > .add-row button:text-is("+ Ceiling")');
+  await page.click('.room-contents > .add-row button:text-is("+ Floor")');
+  await settled(page);
+  const roomHouse = await page.evaluate(() => JSON.parse(localStorage.getItem(Object.keys(localStorage).find((k) => localStorage.getItem(k)?.includes('"surfaces"'))) || "{}").house || {});
+  const nr = (roomHouse.rooms || []).find((r) => r.name === "New room");
+  const nrs = nr ? roomHouse.surfaces.filter((x) => x.inside === nr.id) : [];
+  const nrw = nrs.find((x) => x.type === "wall");
+  check(nr && ["wall", "ceiling", "floor"].every((t) => nrs.some((x) => x.type === t)) && nrw && roomHouse.openings.some((o) => o.surface === nrw.id && o.type === "window"),
+    "a room's wall (with a window), ceiling and floor are added from the room view and belong to that room");
+  check((await page.locator(".room-contents .rc-item").count()) >= 4, "the room view lists its surfaces and openings");
+  await page.click('nav >> text="Check"');
+  check((await page.locator("text=no surface names this room").count()) === 0, "the checker no longer flags the room as having no surfaces");
+  await page.click('nav >> text="Rooms"');
+  await page.locator(".row", { hasText: "New room" }).click();
+  await page.locator(".room-contents").scrollIntoViewIfNeeded();
+  await page.screenshot({ path: path.join(out, "room-desktop.png") });
+
   // Save, and validate the saved file with the Python validator
   const [download] = await Promise.all([page.waitForEvent("download"), page.click("button.primary")]);
   const saved = path.join(out, "e2e-saved.rtn.json");
@@ -175,6 +198,15 @@ const check = (cond, what) => { console.log(`${cond ? "ok  " : "FAIL"} ${what}`)
   check(phoneOverflow <= 1, `phone: layer builder with a framed cavity fits the screen width (overflow ${phoneOverflow}px)`);
   await phone.locator(".cavity-head").scrollIntoViewIfNeeded();
   await phone.screenshot({ path: path.join(out, "layers-phone.png") });
+  // Phone: a room with its surfaces open
+  await phone.click('nav >> text="Rooms"');
+  await phone.locator(".row").first().click();
+  await phone.locator(".rc-item summary").first().click();
+  await phone.waitForSelector(".rc-item[open]");
+  const roomOverflow = await phone.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  check(roomOverflow <= 1, `phone: a room with an open wall fits the screen width (overflow ${roomOverflow}px)`);
+  await phone.locator(".rc-item[open]").scrollIntoViewIfNeeded();
+  await phone.screenshot({ path: path.join(out, "room-phone.png") });
   await phone.click('nav >> text="Openings"');
   await phone.locator(".row", { hasText: "Window" }).first().click();
   await phone.selectOption('select[aria-label="Glazing"]', "__custom__");

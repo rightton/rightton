@@ -3,6 +3,7 @@ import YAML from "yaml";
 import { Field, ObjectForm, type Ctx } from "./components/Field";
 import { GlazingPicker } from "./components/GlazingPicker";
 import { LayerBuilder } from "./components/LayerBuilder";
+import { RoomContents } from "./components/RoomContents";
 import { ResultsView } from "./components/Results";
 import { ScenarioEditor } from "./components/ScenarioEditor";
 import { SectionEditor, type SectionProps } from "./components/SectionEditor";
@@ -191,6 +192,23 @@ function Editors({ page, ctx, lib, out, sub, setSub, doc, pickEpw, go }: {
   const area = (o: Obj) => { const a = num(o.area_ft2) ?? (num(o.width_ft) !== undefined && num(o.height_ft) !== undefined ? num(o.width_ft)! * num(o.height_ft)! : undefined); return a === undefined ? "" : `${fmt(a * ((o.count as number) ?? 1))} ft²`; };
   const legend = <p className="legend"><span className="heat-text">heating</span> / <span className="cool-text">cooling</span> load in Btu/h</p>;
 
+  // New-item templates shared by the Surfaces page and each room's own surfaces.
+  const surfaceTemplate = (type: string | undefined, id: string, inside: string): Obj => {
+    const want = ({ wall: "wall", rim_joist: "wall", roof: "roof", ceiling: "ceiling", floor: "floor" } as Record<string, string>)[type ?? ""];
+    const assembly = first(["assemblies"], (a) => a.type === want) ?? "";
+    const base: Obj = { id, type: type ?? "wall", inside, area_ft2: 100 };
+    if (type === "wall" || type === "rim_joist") return { ...base, assembly, azimuth_deg: 180 };
+    if (type === "roof") return { ...base, assembly, pitch_rise_per_12: 6 };
+    if (type === "ceiling") return { ...base, outside: first(["spaces"], (s) => String(s.type).includes("attic")) ?? "outdoors", assembly };
+    if (type === "floor") return { ...base, outside: first(["spaces"], (s) => /crawl|basement|garage/.test(String(s.type))) ?? "outdoors", assembly };
+    if (type === "foundation_wall") return { ...base, height_ft: 8, depth_below_grade_ft: 6 };
+    return { ...base, exposed_perimeter_ft: 40 };
+  };
+  const walls = (o: Obj) => ["wall", "foundation_wall"].includes(o.type as string);
+  const openingTemplate = (type: string | undefined, id: string, surface: string): Obj => type === "door" ? { id, type: "door", surface, width_ft: 3, height_ft: 6.67, r_value_hr_ft2_f_btu: 4.4 }
+    : type === "skylight" ? { id, type: "skylight", surface, area_ft2: 8, u_factor_btu_hr_ft2_f: 0.6, shgc: 0.4 }
+    : { id, type: "window", surface, count: 1, width_ft: 3, height_ft: 5, glazing: "double_clear_wood" };
+
   if (page === "location") {
     const loc = (house.location as Obj) ?? {};
     const setLoc = (v: Obj) => doc.update(["location"], v);
@@ -224,6 +242,8 @@ function Editors({ page, ctx, lib, out, sub, setSub, doc, pickEpw, go }: {
         {sub.rooms === "rooms" && <>{legend}{section({ title: "Rooms", singular: "room", path: ["rooms"], schema: root.properties!.rooms, badge: roomBadge,
           intro: "Conditioned, lived-in rooms. Each has its own floor area and ceiling height.",
           summary: (r) => `${fmt(num(r.floor_area_ft2))} ft² · ${num(r.ceiling_height_ft) ?? 8} ft ceiling · ${nameOf(r.zone)}`, primary: ["ceiling_height_ft"],
+          extra: (r) => <RoomContents room={r} ctx={ctx} lib={lib} onHouse={doc.setHouse} surfacesSchema={root.properties!.surfaces} openingsSchema={root.properties!.openings}
+            surfaceTemplate={surfaceTemplate} openingTemplate={openingTemplate} nameOf={nameOf} badge={loadBadge} />,
           newItem: (_t, id) => ({ id, name: "New room", zone: first(["zones"]) ?? "", floor_area_ft2: 150 }) })}</>}
         {sub.rooms === "zones" && section({ title: "Zones", singular: "zone", path: ["zones"], schema: root.properties!.zones,
           intro: "A zone is a group of rooms on one thermostat. Most houses have one; add another for an upstairs with its own system.",
@@ -251,27 +271,14 @@ function Editors({ page, ctx, lib, out, sub, setSub, doc, pickEpw, go }: {
   }
 
   if (page === "surfaces") {
-    const template = (type: string | undefined, id: string): Obj => {
-      const inside = first(["rooms"]) ?? "";
-      const want = ({ wall: "wall", rim_joist: "wall", roof: "roof", ceiling: "ceiling", floor: "floor" } as Record<string, string>)[type ?? ""];
-      const assembly = first(["assemblies"], (a) => a.type === want) ?? "";
-      const base: Obj = { id, type: type ?? "wall", inside, area_ft2: 100 };
-      if (type === "wall" || type === "rim_joist") return { ...base, assembly, azimuth_deg: 180 };
-      if (type === "roof") return { ...base, inside: first(["spaces"], (s) => String(s.type).includes("attic")) ?? inside, assembly, pitch_rise_per_12: 6 };
-      if (type === "ceiling") return { ...base, outside: first(["spaces"], (s) => String(s.type).includes("attic")) ?? "outdoors", assembly };
-      if (type === "floor") return { ...base, outside: first(["spaces"], (s) => /crawl|basement|garage/.test(String(s.type))) ?? "outdoors", assembly };
-      if (type === "foundation_wall") return { ...base, height_ft: 8, depth_below_grade_ft: 6 };
-      return { ...base, exposed_perimeter_ft: 40 };
-    };
     return <>{legend}{section({ title: "Surfaces", singular: "surface", path: ["surfaces"], schema: root.properties!.surfaces, badge: loadBadge,
       intro: "Walls, roofs, ceilings, floors and slabs. Each belongs to a room (or to an attic or crawlspace) and says what is on its other side.",
       groupBy: (s) => nameOf(s.inside) || "No room",
       summary: (s) => `${pretty(s.type as string)} · ${fmt(num(s.area_ft2))} ft²${s.outside ? ` · to ${nameOf(s.outside)}` : ""}${s.assembly ? ` · ${nameOf(s.assembly)}` : ""}`,
-      primary: ["outside", "azimuth_deg", "thickness_in", "material", "pitch_rise_per_12"], newItem: template })}</>;
+      primary: ["outside", "azimuth_deg", "thickness_in", "material", "pitch_rise_per_12"], newItem: (t, id) => surfaceTemplate(t, id, t === "roof" ? first(["spaces"], (s) => String(s.type).includes("attic")) ?? first(["rooms"]) ?? "" : first(["rooms"]) ?? "") })}</>;
   }
 
   if (page === "openings") {
-    const walls = (o: Obj) => ["wall", "foundation_wall"].includes(o.type as string);
     const glazingName = (id: Json | undefined) => (list(house, ["glazings"]).find((g) => g.id === id)?.name as string) || pretty(String(id));
     const tab = sub.openings ?? "openings";
     return (
@@ -284,9 +291,7 @@ function Editors({ page, ctx, lib, out, sub, setSub, doc, pickEpw, go }: {
           primary: ["count", "width_ft", "height_ft", "storm_window", "azimuth_deg"],
           hide: (o) => (o.type === "window" ? ["glazing", "u_factor_btu_hr_ft2_f", "shgc"] : []),
           extra: (o) => (o.type === "window" ? <GlazingPicker win={o} house={house} lib={lib} onHouse={doc.setHouse} /> : null),
-          newItem: (type, id): Obj => type === "door" ? { id, type: "door", surface: first(["surfaces"], walls) ?? "", width_ft: 3, height_ft: 6.67, r_value_hr_ft2_f_btu: 4.4 }
-            : type === "skylight" ? { id, type: "skylight", surface: first(["surfaces"], (s) => s.type === "roof") ?? "", area_ft2: 8, u_factor_btu_hr_ft2_f: 0.6, shgc: 0.4 }
-            : { id, type: "window", surface: first(["surfaces"], walls) ?? "", count: 1, width_ft: 3, height_ft: 5, glazing: "double_clear_wood" } })}</>}
+          newItem: (type, id): Obj => openingTemplate(type, id, (type === "skylight" ? first(["surfaces"], (s) => s.type === "roof") : first(["surfaces"], walls)) ?? "") })}</>}
         {tab === "glazings" && section({ title: "My glazings", singular: "glazing", path: ["glazings"], schema: root.properties!.glazings,
           intro: "Window glass described once from an NFRC label (whole-window U-factor and SHGC) and used by any number of windows.",
           summary: (g) => `U ${num(g.u_factor_btu_hr_ft2_f) ?? "?"} · SHGC ${num(g.shgc) ?? "?"} · used by ${list(house, ["openings"]).filter((o) => o.glazing === g.id).length}`,
