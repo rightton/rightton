@@ -375,6 +375,73 @@
     ]
    }
   },
+  "glazings": {
+   "type": "array",
+   "description": "Library of window glazings entered from labels or data sheets, each defined once and used by id from windows (glazing). Added in format 1.1.",
+   "items": {
+    "type": "object",
+    "description": "One glazing, usually copied from a window's NFRC label. Use whole-window values (the label's U-factor and Solar Heat Gain Coefficient), not center-of-glass values from a glass brochure.",
+    "properties": {
+     "id": {
+      "$ref": "#/$defs/id",
+      "description": "Unique id of this item. Lowercase letters, digits, hyphens and underscores; must start with a letter or digit."
+     },
+     "name": {
+      "type": "string",
+      "description": "Name shown to people (e.g. the product line)."
+     },
+     "notes": {
+      "type": "string",
+      "description": "Free-form note. Never used in the calculation."
+     },
+     "u_factor_btu_hr_ft2_f": {
+      "$ref": "#/$defs/quantity",
+      "description": "Whole-window U-factor from the NFRC label.",
+      "x-unit": "Btu/h-ft2-F",
+      "x-min": 0
+     },
+     "shgc": {
+      "$ref": "#/$defs/quantity",
+      "description": "Whole-window Solar Heat Gain Coefficient from the NFRC label (0 to 1, no unit).",
+      "x-unit": "0-1",
+      "x-min": 0,
+      "x-max": 1
+     },
+     "glass_layers": {
+      "type": "integer",
+      "enum": [
+       1,
+       2,
+       3
+      ],
+      "description": "Number of panes, if known (used to pick interior-shading factors)."
+     },
+     "glass_type": {
+      "type": "string",
+      "enum": [
+       "clear",
+       "tinted",
+       "reflective",
+       "tinted_reflective",
+       "low_e",
+       "low_e_low_solar",
+       "low_e_high_solar"
+      ],
+      "description": "Glass type, if known."
+     },
+     "source": {
+      "type": "string",
+      "description": "Where the values came from (e.g. \"NFRC label\", a product data sheet)."
+     }
+    },
+    "additionalProperties": false,
+    "required": [
+     "id",
+     "u_factor_btu_hr_ft2_f",
+     "shgc"
+    ]
+   }
+  },
   "zones": {
    "type": "array",
    "description": "Zones: groups of rooms served and controlled together (one thermostat). At least one.",
@@ -1315,7 +1382,7 @@
        },
        "glazing": {
         "type": "string",
-        "description": "Id of a glazing preset (see the glazing list in docs/FORMAT.md), used when u_factor_btu_hr_ft2_f and shgc are not given."
+        "description": "Id of a glazing in this file's glazings library, or of a glazing preset (see the glazing list in docs/FORMAT.md). Used when u_factor_btu_hr_ft2_f and shgc are not given on the window itself. A library entry with the same id as a preset wins."
        },
        "u_factor_btu_hr_ft2_f": {
         "$ref": "#/$defs/quantity",

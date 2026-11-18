@@ -26,6 +26,7 @@ format_version: 1.1.0
 project: {name: ..., description: ..., bedroom_count: 3}
 location: {weather_station_id: "725650"}       # or design_conditions, see below
 assemblies: [ ... ]     # constructions, each defined once
+glazings: [ ... ]       # optional: window glazings from NFRC labels, each defined once
 zones: [ ... ]          # at least one
 rooms: [ ... ]          # at least one; each names its zone
 spaces: [ ... ]         # attic, crawlspace, garage, porch ... (optional)
@@ -102,9 +103,14 @@ wall), a space id, or another room id. By `type`:
   `{r_value_hr_ft2_f_btu, depth_ft}`, `under_slab_insulation` `{r_value_hr_ft2_f_btu, width_ft, whole_slab}`,
   `exterior_horizontal_insulation` `{r_value_hr_ft2_f_btu, width_ft, depth_below_grade_ft}`. No assembly.
 
+**glazings** (optional library, each): `id`*, `u_factor_btu_hr_ft2_f`*, `shgc`*, `name`, `notes`,
+`source`, `glass_layers`, `glass_type`. Use it when the description gives a window's NFRC label values
+(whole-window U-factor and SHGC, not center-of-glass) for several windows: define the glazing once and set
+`glazing: <its id>` on each window.
+
 **openings** (each): `id`*, `type`* (window | door | skylight), `surface`* (the wall or roof it is in),
 size as `area_ft2` of ONE unit or `width_ft` and `height_ft`, and `count` (default 1).
-- `window`: `glazing` (preset id) OR both `u_factor_btu_hr_ft2_f` and `shgc`; `azimuth_deg` (default: the
+- `window`: `glazing` (a preset id, or an id from `glazings`) OR both `u_factor_btu_hr_ft2_f` and `shgc`; `azimuth_deg` (default: the
   wall's); `storm_window` (none | clear | low_e); `glass_layers`, `glass_type`;
   `interior_shading` `{type, coverage_frac, blinds_position}` or `{coefficient_frac}`;
   `exterior_shading` `{type, coefficient_frac}`; `insect_screen` `{location, coverage_frac}`;
@@ -209,6 +215,7 @@ Paths: `air/infiltration/air_changes_per_hr_at_50pa`, `surfaces/north-wall/assem
 | `cladding (assemblies)` | wood, vinyl, aluminum, fiber_cement, stucco, shingle, brick, stone, other, none |
 | `roofing (assemblies)` | asphalt_shingles, wood_shingles, metal, clay_tile, concrete, plastic_rubber, eps, shingles |
 | `roof_color (assemblies)` | dark, medium_dark, medium, medium_light, light, white, reflective |
+| `glass_type (glazings)` | clear, tinted, reflective, tinted_reflective, low_e, low_e_low_solar, low_e_high_solar |
 | `type (spaces)` | vented_attic, unvented_attic, vented_crawlspace, unvented_crawlspace, unconditioned_basement, garage, open_porch, conditioned, custom |
 | `material (surfaces[foundation_wall])` | solid_concrete, double_brick, wood, concrete_block, concrete_block_solid_core, concrete_block_perlite_core, concrete_block_foam_core, concrete_block_vermiculite_core |
 | `glass_type (openings[window])` | clear, tinted, reflective, tinted_reflective, low_e, low_e_low_solar, low_e_high_solar |

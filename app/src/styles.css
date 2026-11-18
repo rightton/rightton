@@ -140,6 +140,11 @@ details[open] > summary { margin-bottom: .6rem; }
 .layer-n { width: 1.5rem; height: 1.5rem; border-radius: 50%; background: var(--brand-soft); color: var(--brand); font-size: .78rem; font-weight: 700; display: grid; place-items: center; }
 .layer-r { font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; } .layer-btns { display: flex; }
 .layer-fields { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: .5rem; margin-top: .5rem; align-items: end; }
+.glazing-picker { margin-top: 1rem; border-top: 1px solid var(--line); padding-top: .8rem; display: grid; gap: .3rem; }
+.glazing-picker .field-label { font-size: .84rem; font-weight: 600; } .glazing-picker select { max-width: 100%; }
+.glazing-custom { border: 1px solid var(--line); border-radius: 9px; padding: .6rem .8rem; background: var(--surface-2); display: grid; gap: .5rem; }
+.glazing-fields, .glazing-save { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: .5rem; align-items: end; }
+.glazing-fields label, .glazing-save label { font-size: .76rem; color: var(--muted); display: grid; gap: .15rem; }
 .framing-panel { margin-top: .9rem; border: 1px solid var(--line); border-radius: 9px; padding: .6rem .8rem; }
 .framing-panel h4 { margin: 0 0 .4rem; font-size: .95rem; }
 .framing-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: .5rem; }

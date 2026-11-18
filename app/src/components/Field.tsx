@@ -38,7 +38,9 @@ export function refOptions(name: string, ctx: Ctx, owner?: Obj): Option[] | null
     case "material": case "framing_material":
       return materialsInCategoryOrder(ctx.lib).filter((m) => name === "material" || m.r_per_inch_hr_ft2_f_btu_in !== undefined)
         .map((m) => ({ value: m.id, label: m.name, group: categoryName(ctx.lib, m.category) }));
-    case "glazing": return ctx.lib.glazing.map((g) => ({ value: g.id, label: `${g.name} (U ${g.u_factor_btu_hr_ft2_f}, SHGC ${g.shgc})` }));
+    case "glazing": return [
+      ...list(h, ["glazings"]).map((g) => ({ value: g.id as string, group: "My glazings (from labels)", label: `${(g.name as string) || (g.id as string)} (U ${num(g.u_factor_btu_hr_ft2_f)}, SHGC ${num(g.shgc)})` })),
+      ...ctx.lib.glazing.map((g) => ({ value: g.id, group: "Typical windows", label: `${g.name} (U ${g.u_factor_btu_hr_ft2_f}, SHGC ${g.shgc})` }))];
     case "weather_station_id": return ctx.lib.stations.map((s) => ({ value: s.id, group: s.state, label: `${s.name}, ${s.state} (${Math.round(s.heating_f)}°F / ${Math.round(s.cooling_f)}°F)` }));
     case "supply_registers": case "returns": return rooms;
     case "includes": return named(list(h, ["scenarios"])).filter((o) => o.value !== owner?.id);

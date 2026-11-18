@@ -234,7 +234,7 @@ def _items(h: dict, section: str) -> list[dict]:
     return [x for x in node if isinstance(x, dict)] if isinstance(node, list) else []
 
 
-ID_SECTIONS = ("assemblies", "zones", "rooms", "spaces", "surfaces", "openings", "air/ventilation", "air/ducts",
+ID_SECTIONS = ("assemblies", "glazings", "zones", "rooms", "spaces", "surfaces", "openings", "air/ventilation", "air/ducts",
                "equipment", "hvac/systems", "scenarios")
 
 
@@ -398,8 +398,20 @@ def check_meaning(house: dict) -> list[Issue]:
             warn(f"rooms > {label(r)}", "no surface names this room as inside or outside, so it has no walls, ceiling "
                                         "or floor in the calculation. Add its surfaces (interior rooms can be left bare).")
 
-    # Openings
+    # Glazings library
     glazing = data.glazing()
+    own_glazings = {g["id"]: g for g in _items(h, "glazings") if "id" in g}
+    for gid, g in own_glazings.items():
+        where = f"glazings > {label(g)}"
+        if gid in glazing:
+            warn(where, f'has the same id as the RightTon preset "{gid}"; windows naming it get your values, not the '
+                        "preset's. Rename it if that is not what you meant.")
+        u = g.get("u_factor_btu_hr_ft2_f")
+        if isinstance(u, (int, float)) and (u < 0.1 or u > 1.5):
+            warn(where, f"a whole-window U-factor of {u:g} is unusual (labels run from about 0.15 to 1.3). Check that "
+                        "it is the U-factor, not the R-value or a metric value.")
+
+    # Openings
     for o in _items(h, "openings"):
         where = f"openings > {label(o)}"
         kind = o.get("type")
@@ -419,8 +431,10 @@ def check_meaning(house: dict) -> list[Issue]:
         if "area_ft2" not in o and not ("width_ft" in o and "height_ft" in o):
             error(where, "needs a size: add area_ft2 (of one unit), or width_ft and height_ft.")
         if kind == "window":
-            if o.get("glazing") is not None and o["glazing"] not in glazing:
-                error(f"{where} > glazing", f'"{o["glazing"]}" is not a glazing preset. Presets: ' + ", ".join(glazing) + ".")
+            if o.get("glazing") is not None and o["glazing"] not in glazing and o["glazing"] not in own_glazings:
+                mine = f' Your glazings library has: {", ".join(own_glazings)}.' if own_glazings else ""
+                error(f"{where} > glazing", f'"{o["glazing"]}" is not in the glazings library or the presets.{mine} '
+                                            "Presets: " + ", ".join(glazing) + ".")
             elif ("u_factor_btu_hr_ft2_f" not in o or "shgc" not in o) and o.get("glazing") is None:
                 error(where, 'needs its glass described: add "glazing" (a preset such as "single_clear_wood"), or '
                              "both u_factor_btu_hr_ft2_f and shgc.")

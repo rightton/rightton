@@ -98,7 +98,9 @@ const check = (cond, what) => { console.log(`${cond ? "ok  " : "FAIL"} ${what}`)
   check((await page.locator(".layer-r").allTextContents()).slice(1, 4).join(" ") === "R-10.00 R-8.40 R-1.00", "each fill shows its own R-value: foam R-10, batt R-8.4, air space R-1.0");
   await page.locator(".cavity-head").scrollIntoViewIfNeeded();
   await page.screenshot({ path: path.join(out, "split-cavity-desktop.png"), fullPage: false });
-  await page.click('button[aria-label="Undo"]');
+  await page.setInputFiles('input[type="file"][accept=".json,.yaml,.yml"]', example);  // back to the unedited example
+  await settled(page);
+  await page.click('nav >> text="Assemblies"');
 
   // Framing share from lumber and spacing (sunroom wall: 2x4 studs with an R-11 batt, typed share 30 %)
   await page.locator(".row").nth(1).click();
@@ -116,13 +118,40 @@ const check = (cond, what) => { console.log(`${cond ? "ok  " : "FAIL"} ${what}`)
   check((await page.locator('input[aria-label="Cavity depth (in)"]').inputValue()) === "5.5", "2x6 lumber sets the cavity depth to 5.5 in (the rest of the batt's cavity is air space)");
   await page.locator(".framing-panel").scrollIntoViewIfNeeded();
   await page.screenshot({ path: path.join(out, "framing-desktop.png") });
-  for (let k = 0; k < 6; k++) await page.click('button[aria-label="Undo"]');
+  await page.setInputFiles('input[type="file"][accept=".json,.yaml,.yml"]', example);
+  await settled(page);
 
   // Scenario view
   await page.click('nav >> text="Results"');
   await page.selectOption("#scn", "everything");
   await page.waitForSelector(".stat .delta.good");
   check(true, "selecting a scenario shows the change against the baseline");
+
+  // Custom glazing from an NFRC label: U 0.27 / SHGC 0.22, saved to the glazings library, saved, reopened, calculated
+  await page.click('nav >> text="Openings"');
+  await page.locator(".row", { hasText: "Window" }).first().click();
+  await page.selectOption('select[aria-label="Glazing"]', "__custom__");
+  await page.fill('input[aria-label="U-factor"]', "0.27");
+  await page.fill('input[aria-label="SHGC"]', "0.22");
+  await page.fill('input[aria-label="Glazing name"]', "Label test window");
+  await page.screenshot({ path: path.join(out, "glazing-desktop.png") });
+  await page.click("text=Save for other windows");
+  await page.waitForFunction(() => document.querySelector('select[aria-label="Glazing"]')?.value === "label-test-window");
+  check(true, "custom glazing saved to the library and the window now uses it");
+  await settled(page);
+  const [dl2] = await Promise.all([page.waitForEvent("download"), page.click("button.primary")]);
+  const saved2 = path.join(out, "e2e-glazing.rtn.json");
+  await dl2.saveAs(saved2);
+  const h2 = JSON.parse(fs.readFileSync(saved2, "utf8"));
+  const g2 = (h2.glazings || []).find((g) => g.id === "label-test-window");
+  check(h2.format_version === "1.1.0" && g2 && g2.u_factor_btu_hr_ft2_f === 0.27 && g2.shgc === 0.22 && h2.openings.some((o) => o.glazing === "label-test-window"),
+    "saved file (format 1.1.0) holds the glazing and the window's reference to it");
+  await page.setInputFiles('input[type="file"][accept=".json,.yaml,.yml"]', saved2);
+  await settled(page);
+  check((await page.locator(".status.bad").count()) === 0 && (await heating(page)) > 0, `reopened file calculates (heating ${await heating(page)} Btu/h)`);
+  await page.click('nav >> text="Openings"');
+  await page.click("text=My glazings (1)");
+  check((await page.locator(".row", { hasText: "Label test window" }).count()) === 1, "the glazing is listed under My glazings after reopening");
 
   // Phone layout: no sideways scrolling
   const phone = await browser.newPage({ viewport: { width: 390, height: 800 }, isMobile: true });
@@ -146,6 +175,14 @@ const check = (cond, what) => { console.log(`${cond ? "ok  " : "FAIL"} ${what}`)
   check(phoneOverflow <= 1, `phone: layer builder with a framed cavity fits the screen width (overflow ${phoneOverflow}px)`);
   await phone.locator(".cavity-head").scrollIntoViewIfNeeded();
   await phone.screenshot({ path: path.join(out, "layers-phone.png") });
+  await phone.click('nav >> text="Openings"');
+  await phone.locator(".row", { hasText: "Window" }).first().click();
+  await phone.selectOption('select[aria-label="Glazing"]', "__custom__");
+  await phone.waitForSelector(".glazing-custom");
+  const glzOverflow = await phone.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  check(glzOverflow <= 1, `phone: custom glazing entry fits the screen width (overflow ${glzOverflow}px)`);
+  await phone.locator(".glazing-custom").scrollIntoViewIfNeeded();
+  await phone.screenshot({ path: path.join(out, "glazing-phone.png") });
 
   check(problems.length === 0, `no page errors ${problems.join("; ")}`);
   check(offsite.length === 0, `no requests to other sites ${offsite.slice(0, 3).join(", ")}`);

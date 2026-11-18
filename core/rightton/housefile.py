@@ -24,10 +24,10 @@ from . import data, ducts as duct_math, model as M, psychro, weather
 from .assemblies import Assembly, Layer
 from .framing import FramingShare, framing_share
 
-FORMAT_VERSION = "1.1.0"  # 1.1: assemblies[].framing
+FORMAT_VERSION = "1.1.0"  # 1.1: assemblies[].framing, glazings library
 SUPPORTED_MAJOR = 1
 
-SECTION_LISTS = ("assemblies", "zones", "rooms", "spaces", "surfaces", "openings", "equipment", "scenarios")
+SECTION_LISTS = ("assemblies", "glazings", "zones", "rooms", "spaces", "surfaces", "openings", "equipment", "scenarios")
 OUTSIDE_WORDS = {"outdoors": M.OUTSIDE, "ground": M.GROUND, "adiabatic": M.ADIABATIC}
 SPACE_KINDS = {
     "vented_attic": "attic_vented", "unvented_attic": "attic_unvented",
@@ -280,6 +280,16 @@ def assembly_framing(asm: dict, surface_type: Optional[str] = None) -> Optional[
         raise HouseFileError(f"Assembly {label(asm)}, framing: {e}") from None
 
 
+def glazing_for(house: dict, glazing_id) -> Optional[dict]:
+    """A glazing by id: the file's own glazings library first (plain values), then RightTon's presets."""
+    if glazing_id is None:
+        return None
+    for g in house.get("glazings", []) or []:
+        if g.get("id") == glazing_id:
+            return plain(g)
+    return data.glazing().get(glazing_id)
+
+
 def framed_cavities(asm: dict) -> list[tuple[int, int, float]]:
     """(first layer index, last layer index, total thickness in) of each run of consecutive framed
     layers: one framed cavity, possibly split into several fills."""
@@ -484,7 +494,6 @@ def to_building(house: dict, scenario: Optional[str] = None) -> Conversion:
                 exterior_horizontal_insulation_width_ft=xi.get("width_ft", 0.0),
                 exterior_horizontal_insulation_depth_below_grade_ft=xi.get("depth_below_grade_ft", 0.0)))
 
-    glazing = data.glazing()
     for o in h.get("openings", []):
         area = opening_area_ft2(o)
         kind = o["type"]
@@ -494,13 +503,14 @@ def to_building(house: dict, scenario: Optional[str] = None) -> Conversion:
             u, shgc, layers, gtype = (o.get("u_factor_btu_hr_ft2_f"), o.get("shgc"), o.get("glass_layers"),
                                       o.get("glass_type"))
             if u is None or shgc is None:
-                preset = glazing.get(o.get("glazing"))
+                preset = glazing_for(h, o.get("glazing"))
                 if preset is None:
-                    raise HouseFileError(f"Window {label(o)} needs u_factor_btu_hr_ft2_f and shgc, or a glazing preset.")
+                    raise HouseFileError(f"Window {label(o)} needs u_factor_btu_hr_ft2_f and shgc, or a glazing "
+                                         "from the glazings library or the presets.")
                 u = preset["u_factor_btu_hr_ft2_f"] if u is None else u
                 shgc = preset["shgc"] if shgc is None else shgc
-                layers = preset["glass_layers"] if layers is None else layers
-                gtype = preset["glass_type"] if gtype is None else gtype
+                layers = preset.get("glass_layers") if layers is None else layers
+                gtype = preset.get("glass_type") if gtype is None else gtype
             azimuth = o.get("azimuth_deg", surface_azimuth.get(o["surface"]))
             shade = o.get("interior_shading")
             ext = o.get("exterior_shading", {})

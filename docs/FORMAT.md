@@ -97,7 +97,7 @@ older minor versions. A breaking change raises the major version and ships with 
 | Version | What changed |
 | --- | --- |
 | 1.0.0 | First published format. |
-| 1.1.0 | `assemblies[].framing` (lumber size and spacing; the framing share and cavity depth are calculated from it). Every 1.0 file is a valid 1.1 file. |
+| 1.1.0 | `assemblies[].framing` (lumber size and spacing; the framing share and cavity depth are calculated from it) and the `glazings` library (window U-factor and SHGC from labels, reused by id). Every 1.0 file is a valid 1.1 file. |
 
 ## Checking a file
 
@@ -120,6 +120,7 @@ of numeric inputs) and `x-discriminator` are extra information that such librari
 | `project` |  | About the project. Never put a street address, an owner's name or other personal details here. |
 | `location` |  | Where the house is, as a weather station. There is no address field. |
 | `assemblies` |  | Library of constructions (walls, roofs, ceilings, floors), each defined once and used by id from surfaces. |
+| `glazings` |  | Library of window glazings entered from labels or data sheets, each defined once and used by id from windows (glazing). Added in format 1.1. |
 | `zones` | yes | Zones: groups of rooms served and controlled together (one thermostat). At least one. |
 | `rooms` | yes | Conditioned rooms. At least one. |
 | `spaces` |  | Spaces that are not lived-in rooms: attics, crawlspaces, unconditioned basements, garages, porches, and conditioned-but-unoccupied spaces such as a sealed attic. |
@@ -226,6 +227,25 @@ For assemblies with a framed layer: lumber size and spacing, from which RightTon
 | `depth_in` |  | number (in, at least 0) | Actual member depth, which is the cavity depth, when it differs from the nominal size or lumber is "custom". |
 | `spacing_in` | yes | number (in, at least 0) | On-center spacing of the members: usually 12, 16, 19.2 or 24. |
 | `allowance_frac` |  | number (0-1, 0 to 0.9) | Extra framing share for plates, headers, corners, blocking and window/door framing. Default: derived from the reference engine's typical framing factors (about 0.137 for walls, 0.037 for floors and ceilings, 0.0075 for roofs). |
+
+### glazings
+
+Library of window glazings entered from labels or data sheets, each defined once and used by id from windows (glazing). Added in format 1.1.
+
+#### glazings (each item)
+
+One glazing, usually copied from a window's NFRC label. Use whole-window values (the label's U-factor and Solar Heat Gain Coefficient), not center-of-glass values from a glass brochure.
+
+| Field | Required | Type and unit | Meaning |
+| --- | --- | --- | --- |
+| `id` | yes | id | Unique id of this item. Lowercase letters, digits, hyphens and underscores; must start with a letter or digit. |
+| `name` |  | text | Name shown to people (e.g. the product line). |
+| `notes` |  | text | Free-form note. Never used in the calculation. |
+| `u_factor_btu_hr_ft2_f` | yes | number (Btu/h-ft2-F, at least 0) | Whole-window U-factor from the NFRC label. |
+| `shgc` | yes | number (0-1, 0 to 1) | Whole-window Solar Heat Gain Coefficient from the NFRC label (0 to 1, no unit). |
+| `glass_layers` |  | one of: `1`, `2`, `3` | Number of panes, if known (used to pick interior-shading factors). |
+| `glass_type` |  | one of: `clear`, `tinted`, `reflective`, `tinted_reflective`, `low_e`, `low_e_low_solar`, `low_e_high_solar` | Glass type, if known. |
+| `source` |  | text | Where the values came from (e.g. "NFRC label", a product data sheet). |
 
 ### zones
 
@@ -492,7 +512,7 @@ Window or glass door.
 | `height_ft` |  | number (ft, at least 0) | Height of one unit. |
 | `surface` | yes | id | Id of the wall (or foundation wall) the window is in. |
 | `azimuth_deg` |  | number (deg, 0 to 360) | Direction the window faces. Default: the wall's azimuth_deg. |
-| `glazing` |  | text | Id of a glazing preset (see the glazing list in docs/FORMAT.md), used when u_factor_btu_hr_ft2_f and shgc are not given. |
+| `glazing` |  | text | Id of a glazing in this file's glazings library, or of a glazing preset (see the glazing list in docs/FORMAT.md). Used when u_factor_btu_hr_ft2_f and shgc are not given on the window itself. A library entry with the same id as a preset wins. |
 | `u_factor_btu_hr_ft2_f` |  | number (Btu/h-ft2-F, at least 0) | Whole-unit U-factor. |
 | `shgc` |  | number (0-1, 0 to 1) | Solar heat gain coefficient (0 to 1, no unit). |
 | `glass_layers` |  | one of: `1`, `2`, `3` | Number of panes, if known (used to pick interior-shading factors). |

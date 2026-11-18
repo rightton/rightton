@@ -103,7 +103,7 @@ export function allIds(house: House): Set<string> {
   for (const path of ID_SECTIONS) for (const item of list(house, path)) if (typeof item.id === "string") ids.add(item.id);
   return ids;
 }
-export const ID_SECTIONS: string[][] = [["assemblies"], ["zones"], ["rooms"], ["spaces"], ["surfaces"], ["openings"],
+export const ID_SECTIONS: string[][] = [["assemblies"], ["glazings"], ["zones"], ["rooms"], ["spaces"], ["surfaces"], ["openings"],
   ["air", "ventilation"], ["air", "ducts"], ["equipment"], ["hvac", "systems"], ["scenarios"]];
 
 export function uniqueId(house: House, base: string): string {
@@ -112,7 +112,7 @@ export function uniqueId(house: House, base: string): string {
   for (let n = 2; ; n++) if (!ids.has(`${base}-${n}`)) return `${base}-${n}`;
 }
 
-const REF_KEYS = new Set(["zone", "inside", "outside", "assembly", "surface", "system", "room", "location", "ceiling"]);
+const REF_KEYS = new Set(["zone", "inside", "outside", "assembly", "surface", "system", "room", "location", "ceiling", "glazing"]);
 const REF_LISTS = new Set(["supply_registers", "returns", "includes"]);
 
 /** Rename an id everywhere it is referenced, including scenario paths. */

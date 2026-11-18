@@ -91,7 +91,7 @@ def field_reference():
     out.append("")
     for name in ("project", "location"):
         table(props[name], 3, name, out)
-    for name in ("assemblies", "zones", "rooms", "spaces"):
+    for name in ("assemblies", "glazings", "zones", "rooms", "spaces"):
         s = resolve(props[name])
         out.append(f"### {name}\n\n{s['description']}\n")
         table(s["items"], 4, f"{name} (each item)", out)

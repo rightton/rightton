@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import YAML from "yaml";
 import { Field, ObjectForm, type Ctx } from "./components/Field";
+import { GlazingPicker } from "./components/GlazingPicker";
 import { LayerBuilder } from "./components/LayerBuilder";
 import { ResultsView } from "./components/Results";
 import { ScenarioEditor } from "./components/ScenarioEditor";
@@ -271,14 +272,28 @@ function Editors({ page, ctx, lib, out, sub, setSub, doc, pickEpw, go }: {
 
   if (page === "openings") {
     const walls = (o: Obj) => ["wall", "foundation_wall"].includes(o.type as string);
-    return <>{legend}{section({ title: "Openings", singular: "opening", path: ["openings"], schema: root.properties!.openings, badge: loadBadge,
-      intro: "Windows, doors and skylights. Enter one typical unit and how many there are.",
-      groupBy: (o) => nameOf(o.surface) || "No surface",
-      summary: (o) => `${(o.count as number) > 1 ? `${o.count} × ` : ""}${pretty(o.type as string)} · ${area(o)}${o.glazing ? ` · ${pretty(o.glazing as string)}` : ""}${o.storm_window && o.storm_window !== "none" ? " + storm" : ""}`,
-      primary: ["count", "width_ft", "height_ft", "glazing", "storm_window", "azimuth_deg"],
-      newItem: (type, id): Obj => type === "door" ? { id, type: "door", surface: first(["surfaces"], walls) ?? "", width_ft: 3, height_ft: 6.67, r_value_hr_ft2_f_btu: 4.4 }
-        : type === "skylight" ? { id, type: "skylight", surface: first(["surfaces"], (s) => s.type === "roof") ?? "", area_ft2: 8, u_factor_btu_hr_ft2_f: 0.6, shgc: 0.4 }
-        : { id, type: "window", surface: first(["surfaces"], walls) ?? "", count: 1, width_ft: 3, height_ft: 5, glazing: "double_clear_wood" } })}</>;
+    const glazingName = (id: Json | undefined) => (list(house, ["glazings"]).find((g) => g.id === id)?.name as string) || pretty(String(id));
+    const tab = sub.openings ?? "openings";
+    return (
+      <div className="stack">
+        <Tabs value={tab} onChange={(v) => setSub("openings", v)} options={[{ key: "openings", label: "Windows, doors, skylights" }, { key: "glazings", label: `My glazings (${list(house, ["glazings"]).length})` }]} />
+        {tab === "openings" && <>{legend}{section({ title: "Openings", singular: "opening", path: ["openings"], schema: root.properties!.openings, badge: loadBadge,
+          intro: "Windows, doors and skylights. Enter one typical unit and how many there are.",
+          groupBy: (o) => nameOf(o.surface) || "No surface",
+          summary: (o) => `${(o.count as number) > 1 ? `${o.count} × ` : ""}${pretty(o.type as string)} · ${area(o)}${o.glazing ? ` · ${glazingName(o.glazing)}` : o.type === "window" && num(o.u_factor_btu_hr_ft2_f) !== undefined ? ` · U ${num(o.u_factor_btu_hr_ft2_f)} / SHGC ${num(o.shgc)}` : ""}${o.storm_window && o.storm_window !== "none" ? " + storm" : ""}`,
+          primary: ["count", "width_ft", "height_ft", "storm_window", "azimuth_deg"],
+          hide: (o) => (o.type === "window" ? ["glazing", "u_factor_btu_hr_ft2_f", "shgc"] : []),
+          extra: (o) => (o.type === "window" ? <GlazingPicker win={o} house={house} lib={lib} onHouse={doc.setHouse} /> : null),
+          newItem: (type, id): Obj => type === "door" ? { id, type: "door", surface: first(["surfaces"], walls) ?? "", width_ft: 3, height_ft: 6.67, r_value_hr_ft2_f_btu: 4.4 }
+            : type === "skylight" ? { id, type: "skylight", surface: first(["surfaces"], (s) => s.type === "roof") ?? "", area_ft2: 8, u_factor_btu_hr_ft2_f: 0.6, shgc: 0.4 }
+            : { id, type: "window", surface: first(["surfaces"], walls) ?? "", count: 1, width_ft: 3, height_ft: 5, glazing: "double_clear_wood" } })}</>}
+        {tab === "glazings" && section({ title: "My glazings", singular: "glazing", path: ["glazings"], schema: root.properties!.glazings,
+          intro: "Window glass described once from an NFRC label (whole-window U-factor and SHGC) and used by any number of windows.",
+          summary: (g) => `U ${num(g.u_factor_btu_hr_ft2_f) ?? "?"} · SHGC ${num(g.shgc) ?? "?"} · used by ${list(house, ["openings"]).filter((o) => o.glazing === g.id).length}`,
+          primary: ["u_factor_btu_hr_ft2_f", "shgc", "source"],
+          newItem: (_t, id): Obj => ({ id, name: "New glazing", u_factor_btu_hr_ft2_f: 0.3, shgc: 0.3, source: "NFRC label" }) })}
+      </div>
+    );
   }
 
   if (page === "air") {

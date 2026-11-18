@@ -124,7 +124,9 @@ def _candidates(house: dict, conv: housefile.Conversion) -> list[dict]:
     # Values that come from RightTon's lists rather than from the file
     glazing = data.glazing()
     for i, o in enumerate(plain.get("openings", [])):
-        preset = glazing.get(o.get("glazing")) if o.get("type") == "window" else None
+        # A glazing from the file's own library is varied where it is defined (by the walk above).
+        own = any(g.get("id") == o.get("glazing") for g in plain.get("glazings", []) or [])
+        preset = glazing.get(o.get("glazing")) if o.get("type") == "window" and not own else None
         if preset and "u_factor_btu_hr_ft2_f" not in o and "shgc" not in o:
             where = f"openings: {o.get('name') or o['id']}"
 
