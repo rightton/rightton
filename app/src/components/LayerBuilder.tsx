@@ -1,16 +1,19 @@
 // Assembly layer builder. The R-value shown is calculated by the Python core.
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { engine, type AssemblyResult } from "../engine";
 import { fmt, isWrapped, num } from "../schemaUtil";
 import type { Json, Library, Obj } from "../types";
 
 export function LayerBuilder({ assembly, setAssembly, lib }: { assembly: Obj; setAssembly: (a: Obj) => void; lib: Library }) {
   const layers = (Array.isArray(assembly.layers) ? assembly.layers : []) as Obj[];
-  const [result, setResult] = useState<AssemblyResult | null>(null);
+  const [computed, setComputed] = useState<{ key: string; result: AssemblyResult } | null>(null);
   const key = JSON.stringify(assembly);
+  // Per-layer values are only shown for the layers they were calculated for (never a stale result).
+  const result = computed?.result ?? null;
+  const fresh = computed?.key === key;
   useEffect(() => {
     let live = true;
-    const timer = setTimeout(() => engine.assembly(assembly).then((r) => live && setResult(r)).catch(() => undefined), 150);
+    const timer = setTimeout(() => engine.assembly(assembly).then((r) => live && setComputed({ key, result: r })).catch(() => undefined), 150);
     return () => { live = false; clearTimeout(timer); };
   }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
   const useLayers = Array.isArray(assembly.layers);
@@ -23,6 +26,82 @@ export function LayerBuilder({ assembly, setAssembly, lib }: { assembly: Obj; se
       return merged;
     });
     write(next);
+  };
+  // Split cavities: consecutive framed layers share one framing member, so they form one cavity. The
+  // fills are its layers; depth the fills leave unused is a closed air space at the end of the run
+  // (the core models it as R-1.0, see rightton.assemblies.split_cavity). Only thicknesses are added
+  // up here; all R-values come from the core.
+  const isFramed = (l: Obj) => l.framing_material !== undefined || l.framing_r_per_inch_hr_ft2_f_btu_in !== undefined;
+  const isAir = (l: Obj) => l.material === "air_space_closed";
+  const thick = (l: Obj) => num(l.thickness_in) ?? 0;
+  const runs: { start: number; end: number }[] = [];
+  for (let i = 0; i < layers.length; i++) {
+    if (!isFramed(layers[i])) continue;
+    const start = i;
+    while (i + 1 < layers.length && isFramed(layers[i + 1])) i++;
+    runs.push({ start, end: i });
+  }
+  const runOf = (i: number) => runs.find((r) => r.start <= i && i <= r.end);
+  // An air space at the end of a cavity is its unused depth (an empty cavity is all air space).
+  const leftoverIndex = (r: { start: number; end: number }) => (isAir(layers[r.end]) ? r.end : -1);
+  const [depthText, setDepthText] = useState<Record<number, string>>({});
+  const [depthError, setDepthError] = useState<Record<number, string>>({});
+  const round3 = (x: number) => Math.round(x * 1000) / 1000;
+  const writeRun = (r: { start: number; end: number }, fills: Obj[], depth: number) => {
+    const used = fills.reduce((a, l) => a + thick(l), 0);
+    const framing = { framing_material: layers[r.start].framing_material, framing_r_per_inch_hr_ft2_f_btu_in: layers[r.start].framing_r_per_inch_hr_ft2_f_btu_in };
+    for (const k of Object.keys(framing) as (keyof typeof framing)[]) if (framing[k] === undefined) delete framing[k];
+    const rest = round3(depth - used);
+    const run = rest > 0.01 ? [...fills, { material: "air_space_closed", thickness_in: rest, ...framing } as Obj] : fills;
+    write([...layers.slice(0, r.start), ...run, ...layers.slice(r.end + 1)]);
+  };
+  const setDepth = (r: { start: number; end: number }, raw: string) => {
+    setDepthText({ ...depthText, [r.start]: raw });
+    const d = Number(raw);
+    if (raw.trim() === "" || Number.isNaN(d) || d <= 0) { setDepthError({ ...depthError, [r.start]: "Enter the cavity depth in inches." }); return; }
+    const li = leftoverIndex(r);
+    const fills = layers.slice(r.start, (li < 0 ? r.end : li - 1) + 1);
+    const used = fills.reduce((a, l) => a + thick(l), 0);
+    if (used > d + 0.01) { setDepthError({ ...depthError, [r.start]: `The fills are ${round3(used)} in thick; they do not fit in a ${d} in cavity.` }); return; }
+    setDepthError({ ...depthError, [r.start]: "" });
+    writeRun(r, fills, d);
+  };
+  const addFill = (r: { start: number; end: number }) => {
+    const li = leftoverIndex(r);
+    const at = li < 0 ? r.end + 1 : li;
+    const framing: Obj = {};
+    if (layers[r.start].framing_material !== undefined) framing.framing_material = layers[r.start].framing_material;
+    else framing.framing_r_per_inch_hr_ft2_f_btu_in = layers[r.start].framing_r_per_inch_hr_ft2_f_btu_in;
+    write([...layers.slice(0, at), framing, ...layers.slice(at)]);
+  };
+  // Changing a fill's thickness keeps the cavity depth by shrinking or growing the leftover air space.
+  const setFillThickness = (i: number, v: Json | undefined) => {
+    const r = runOf(i);
+    const li = r ? leftoverIndex(r) : -1;
+    if (!r || li < 0 || i === li) { setLayer(i, { thickness_in: v } as Obj); return; }
+    const depth = layers.slice(r.start, r.end + 1).reduce((a, l) => a + thick(l), 0);
+    const fills = layers.slice(r.start, li).map((l, j) => (r.start + j === i ? { ...l, thickness_in: v } as Obj : l));
+    for (const f of fills) if (f.thickness_in === undefined) delete f.thickness_in;
+    const used = fills.reduce((a, l) => a + thick(l), 0);
+    writeRun(r, fills, Math.max(depth, used));
+  };
+  const cavityHeader = (r: { start: number; end: number }): ReactNode => {
+    const li = leftoverIndex(r);
+    const depth = round3(layers.slice(r.start, r.end + 1).reduce((a, l) => a + thick(l), 0));
+    const fillCount = (li < 0 ? r.end + 1 : li) - r.start;
+    const err = depthError[r.start];
+    return (
+      <li key={`cavity-${r.start}`} className="cavity-head">
+        <div className="cavity-row">
+          <strong>Framed cavity{fillCount > 1 ? ` · ${fillCount} fills` : ""}</strong>
+          <label>Cavity depth (in)<input type="text" inputMode="decimal" aria-label="Cavity depth (in)" value={depthText[r.start] ?? (depth ? String(depth) : "")}
+            onChange={(e) => setDepth(r, e.target.value)} onBlur={() => { const t = { ...depthText }; delete t[r.start]; setDepthText(t); setDepthError({ ...depthError, [r.start]: "" }); }} /></label>
+          <button className="btn small" onClick={() => addFill(r)}>{fillCount === 0 ? "+ Fill this cavity" : fillCount === 1 ? "Split cavity: add a fill" : "+ Add fill"}</button>
+        </div>
+        {err ? <p className="help warn" role="alert">{err}</p>
+          : <p className="help">{li >= 0 ? `${round3(thick(layers[li]))} in ${fillCount ? "left over" : "of empty cavity"} is counted as a closed air space (R-1.0).` : "The fills below share one set of framing members."} Fills are listed inside to outside.</p>}
+      </li>
+    );
   };
   const move = (i: number, d: number) => { const next = [...layers]; const [x] = next.splice(i, 1); next.splice(i + d, 0, x); write(next); };
   const materials = lib.materials;
@@ -55,14 +134,17 @@ export function LayerBuilder({ assembly, setAssembly, lib }: { assembly: Obj; se
               const mat = materials.find((m) => m.id === l.material);
               const fixed = mat && mat.r_value_hr_ft2_f_btu !== undefined && mat.r_per_inch_hr_ft2_f_btu_in === undefined;
               const framed = l.framing_material !== undefined || l.framing_r_per_inch_hr_ft2_f_btu_in !== undefined;
-              const calc = result?.ok ? result.layers?.[i] : undefined;
-              return (
-                <li key={i} className="layer">
+              const calc = fresh && result?.ok ? result.layers?.[i] : undefined;
+              const run = runOf(i);
+              return [run && run.start === i ? cavityHeader(run) : null, (
+                <li key={i} className={`layer${run ? " in-cavity" : ""}${run && run.end === i ? " cavity-last" : ""}`}>
                   <div className="layer-top">
                     <span className="layer-n">{i + 1}</span>
                     <select aria-label="Material" value={(l.material as string) ?? ""} onChange={(e) => {
                       const m = materials.find((x) => x.id === e.target.value);
-                      setLayer(i, { material: e.target.value || undefined, ...(m && l.thickness_in === undefined && m.typical_thickness_in ? { thickness_in: m.typical_thickness_in } : {}) } as Obj);
+                      const run = runOf(i);
+                      const keepDepth = run && leftoverIndex(run) >= 0;  // a fill's thickness is entered against the cavity depth
+                      setLayer(i, { material: e.target.value || undefined, ...(m && !keepDepth && l.thickness_in === undefined && m.typical_thickness_in ? { thickness_in: m.typical_thickness_in } : {}) } as Obj);
                     }}>
                       <option value="">Custom layer (enter R-value)</option>
                       {groups.map((g) => <optgroup key={g.id} label={g.name}>{g.items.map((m) => <option key={m.id} value={m.id} title={`Usually: ${m.use}`}>{m.name}</option>)}</optgroup>)}
@@ -77,7 +159,7 @@ export function LayerBuilder({ assembly, setAssembly, lib }: { assembly: Obj; se
                   <div className="layer-fields">
                     <label>Name<input type="text" value={(l.name as string) ?? ""} placeholder={mat?.name ?? "e.g. R-13 batt"} onChange={(e) => setLayer(i, { name: e.target.value || undefined } as Obj)} /></label>
                     <label>Thickness (in)<input type="text" inputMode="decimal" value={numText(l.thickness_in)} disabled={!!fixed && !framed} placeholder={mat?.typical_thickness_in !== undefined ? `${mat.typical_thickness_in} (typical)` : ""}
-                      onChange={(e) => setLayer(i, { thickness_in: parse(e.target.value, l.thickness_in) } as Obj)} /></label>
+                      onChange={(e) => setFillThickness(i, parse(e.target.value, l.thickness_in))} /></label>
                     <label>Layer R-value<input type="text" inputMode="decimal" value={numText(l.r_value_hr_ft2_f_btu)} placeholder={mat ? "from material" : "required"}
                       onChange={(e) => setLayer(i, { r_value_hr_ft2_f_btu: parse(e.target.value, l.r_value_hr_ft2_f_btu) } as Obj)} /></label>
                     <label className="check"><input type="checkbox" checked={framed} onChange={(e) => setLayer(i, { framing_material: e.target.checked ? "softwood" : undefined, framing_r_per_inch_hr_ft2_f_btu_in: undefined } as unknown as Obj)} /> framed (wood)</label>
@@ -85,13 +167,13 @@ export function LayerBuilder({ assembly, setAssembly, lib }: { assembly: Obj; se
                   {mat?.confidence === "estimated" && <p className="help warn">Typical value, not yet tied to a published source. Enter the rated R-value if you know it.</p>}
                   {mat?.note && <p className="help">{mat.note}</p>}
                 </li>
-              );
+              )];
             })}
           </ol>
           <button className="btn small" onClick={() => write([...layers, {}])}>+ Add layer (toward outside)</button>
         </>
       )}
-      <div className={`rbox ${result && !result.ok ? "bad" : ""}`}>
+      <div className={`rbox ${result && !result.ok ? "bad" : ""}${fresh ? "" : " stale"}`} aria-busy={!fresh}>
         {!result && <span className="muted">Calculating…</span>}
         {result && !result.ok && <span>{result.error}</span>}
         {result?.ok && (

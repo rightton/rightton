@@ -60,6 +60,13 @@ scenarios: lists of changes against everything above
   `inside: <attic>`. A wall behind an open porch has `outside: <porch>`.
 - A surface between two rooms matters only when the rooms are in zones with different setpoints
   (zone-to-zone heat transfer). Interior partitions can be left out.
+- **Split cavity** (two or more fills in one framed cavity, e.g. 2 in closed-cell foam then a batt in a
+  2x6): write each fill as its own framed layer, one after another, inside to outside. Consecutive framed
+  layers share the framing members: the path between framing runs through every fill, and the path
+  through framing runs through the member for the full cavity depth (the sum of their `thickness_in`). If
+  the fills do not fill the cavity, add a last framed layer `{material: air_space_closed, thickness_in:
+  <leftover depth>}`; it counts as a closed air space, R-1.0 [CONFIRM: a simple middle value; the real
+  figure depends on gap width, surface emissivity and heat-flow direction].
 
 ## Scenarios
 

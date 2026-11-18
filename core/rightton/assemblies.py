@@ -126,3 +126,33 @@ class Assembly:
     def r_value(self) -> float:
         """Effective assembly R-value (hr-ft2-F/Btu), air films included."""
         return 1.0 / self.u_factor()
+
+
+# Leftover depth in a split cavity is modeled as a closed air space of this R-value.
+# origin: OS-HPXML materials.rb Material.AirCavityClosed (R-1.0 for any enclosed gap), the same
+# value as the air_space_closed material. [CONFIRM] The real resistance of a gap beside insulation
+# depends on its width, the surface emissivities and the direction of heat flow, and a batt
+# usually lofts into part of the gap; R-1.0 is a simple middle value.
+LEFTOVER_AIR_SPACE_R = 1.0
+
+
+def split_cavity(depth_in: float, fills: list[Layer], framing_r_per_inch: float,
+                 tolerance_in: float = 0.01) -> list[Layer]:
+    """Layers for one framed cavity holding several fills (e.g. foam then batt).
+
+    Each fill becomes its own framed layer: the cavity path runs through every fill
+    in series (sum of fill R-values), and the framing path runs through the member
+    for the full cavity depth (framing R per inch * depth), because the stacked
+    layers share one framing member. Depth the fills leave unused becomes a closed
+    air space (``LEFTOVER_AIR_SPACE_R``). Fills thicker than the cavity raise ValueError.
+    """
+    used_in = sum(f.thickness_in for f in fills)
+    if used_in > depth_in + tolerance_in:
+        raise ValueError(f"The fills are {used_in:g} in thick but the cavity is only {depth_in:g} in deep.")
+    layers = [Layer(f.name, thickness_in=f.thickness_in, r_per_inch=f.r_per_inch, r_value=f.r_value,
+                    framing_r_per_inch=framing_r_per_inch, source=f.source) for f in fills]
+    leftover_in = depth_in - used_in
+    if leftover_in > tolerance_in:
+        layers.append(Layer("air space (rest of cavity)", thickness_in=leftover_in, r_value=LEFTOVER_AIR_SPACE_R,
+                            framing_r_per_inch=framing_r_per_inch, source="OS-HPXML Material.AirCavityClosed"))
+    return layers

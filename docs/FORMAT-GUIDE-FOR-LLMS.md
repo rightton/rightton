@@ -62,6 +62,9 @@ Other optional overrides: `elevation_ft`, `heating_setpoint_f` (default 70), `co
 - A framed layer (studs, joists, rafters with fill between them) adds `framing_material: softwood` (or
   `framing_r_per_inch_hr_ft2_f_btu_in`) and needs `thickness_in`; then set `framing_frac` on the assembly
   (0.25 studs at 16 in, 0.2 at 24 in, 0.1 joists/rafters).
+- Split cavity (foam then batt in one stud bay): one framed layer per fill, consecutively; their
+  thicknesses must add up to the cavity depth. Unfilled depth: a last framed layer
+  `{material: air_space_closed, thickness_in: <leftover>, framing_material: softwood}`.
 - Walls: `construction` (default wood_stud), `cladding` (default wood; brick and stone matter),
   `solar_absorptance_frac` (0.3 white, 0.5 light, 0.7 medium, 0.9 dark).
 - Roofs: `roofing`, `roof_color`, `radiant_barrier` (true/false).

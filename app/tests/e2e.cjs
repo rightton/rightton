@@ -75,6 +75,31 @@ const check = (cond, what) => { console.log(`${cond ? "ok  " : "FAIL"} ${what}`)
   check(["Spray foam", "Batts and blankets", "Rigid boards", "Loose fill and blown-in"].every((g) => groups.includes(g)) && !groups.some((g) => /insulation/.test(g)),
     `material picker is grouped by material type (${groups.join(", ")})`);
 
+  // Split cavity: 2 in closed-cell foam + 2 in mineral wool batt in a 5.5 in (2x6) cavity
+  await page.click("text=+ Fill this cavity");
+  const mats = page.locator('.layer select[aria-label="Material"]');
+  await mats.nth(1).selectOption("spray_foam_closed_cell");
+  await page.locator(".layer").nth(1).locator('label:has-text("Thickness") input').fill("2");
+  await page.waitForSelector("text=1.75 in left over");  // 3.75 in balloon-frame cavity minus 2 in of foam
+  await page.click("text=Split cavity: add a fill");
+  await mats.nth(2).selectOption("mineral_wool_batt");
+  await page.locator(".layer").nth(2).locator('label:has-text("Thickness") input').fill("2");
+  const depth = page.locator('input[aria-label="Cavity depth (in)"]').first();
+  await depth.fill("5.5");
+  await depth.blur();
+  await page.waitForSelector("text=1.5 in left over is counted as a closed air space");
+  check(true, "split cavity: 2 in foam + 2 in batt in a 5.5 in cavity leaves 1.5 in of air space");
+  check((await page.locator(".layer.in-cavity").count()) === 3, "the cavity shows its two fills and the air space");
+  await depth.fill("3");
+  await page.waitForSelector("text=do not fit in a 3 in cavity");
+  check(true, "fills deeper than the cavity are refused with a message");
+  await depth.blur();
+  await page.waitForSelector('.rbox[aria-busy="false"]');
+  check((await page.locator(".layer-r").allTextContents()).slice(1, 4).join(" ") === "R-10.00 R-8.40 R-1.00", "each fill shows its own R-value: foam R-10, batt R-8.4, air space R-1.0");
+  await page.locator(".cavity-head").scrollIntoViewIfNeeded();
+  await page.screenshot({ path: path.join(out, "split-cavity-desktop.png"), fullPage: false });
+  await page.click('button[aria-label="Undo"]');
+
   // Scenario view
   await page.click('nav >> text="Results"');
   await page.selectOption("#scn", "everything");
@@ -91,6 +116,18 @@ const check = (cond, what) => { console.log(`${cond ? "ok  " : "FAIL"} ${what}`)
     const overflow = await phone.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     check(overflow <= 1, `phone: ${tab} fits the screen width (overflow ${overflow}px)`);
   }
+
+  // Phone: the layer builder with a framed cavity fits too
+  await phone.setInputFiles('input[type="file"][accept=".json,.yaml,.yml"]', example);
+  await phone.waitForFunction(() => document.querySelector(".project-name").value.includes("1920s"));
+  await phone.click('nav >> text="Assemblies"');
+  await phone.locator(".row").first().click();
+  await phone.waitForSelector(".cavity-head");
+  await phone.waitForTimeout(500);
+  const phoneOverflow = await phone.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  check(phoneOverflow <= 1, `phone: layer builder with a framed cavity fits the screen width (overflow ${phoneOverflow}px)`);
+  await phone.locator(".cavity-head").scrollIntoViewIfNeeded();
+  await phone.screenshot({ path: path.join(out, "layers-phone.png") });
 
   check(problems.length === 0, `no page errors ${problems.join("; ")}`);
   check(offsite.length === 0, `no requests to other sites ${offsite.slice(0, 3).join(", ")}`);
