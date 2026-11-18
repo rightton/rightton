@@ -26,7 +26,8 @@ export function LayerBuilder({ assembly, setAssembly, lib }: { assembly: Obj; se
   };
   const move = (i: number, d: number) => { const next = [...layers]; const [x] = next.splice(i, 1); next.splice(i + d, 0, x); write(next); };
   const materials = lib.materials;
-  const uses = Array.from(new Set(materials.map((m) => m.use)));
+  // Grouped by material type. Any material can go in any layer, framed or not: `use` is only a hint.
+  const groups = lib.material_categories.map((c) => ({ ...c, items: materials.filter((m) => m.category === c.id) })).filter((g) => g.items.length);
   const numText = (v: Json | undefined) => (num(v) === undefined ? "" : String(num(v)));
   const parse = (raw: string, old: Json | undefined): Json | undefined => {
     if (raw.trim() === "") return undefined;
@@ -48,7 +49,7 @@ export function LayerBuilder({ assembly, setAssembly, lib }: { assembly: Obj; se
       </div>
       {useLayers && (
         <>
-          <p className="help">List layers from the inside face to the outside face. Air films are added automatically. Tick “framed” for a layer that has studs, joists or rafters running through it, and set the framing share below.</p>
+          <p className="help">List layers from the inside face to the outside face. Air films are added automatically. Tick “framed” for a layer that has studs, joists or rafters running through it, and set the framing share below. Any insulation can fill any cavity: pick the material, then enter the cavity depth as the thickness (2x4 = 3.5 in, 2x6 = 5.5 in, 2x8 = 7.25 in).</p>
           <ol className="layer-list">
             {layers.map((l, i) => {
               const mat = materials.find((m) => m.id === l.material);
@@ -64,7 +65,7 @@ export function LayerBuilder({ assembly, setAssembly, lib }: { assembly: Obj; se
                       setLayer(i, { material: e.target.value || undefined, ...(m && l.thickness_in === undefined && m.typical_thickness_in ? { thickness_in: m.typical_thickness_in } : {}) } as Obj);
                     }}>
                       <option value="">Custom layer (enter R-value)</option>
-                      {uses.map((u) => <optgroup key={u} label={u}>{materials.filter((m) => m.use === u).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</optgroup>)}
+                      {groups.map((g) => <optgroup key={g.id} label={g.name}>{g.items.map((m) => <option key={m.id} value={m.id} title={`Usually: ${m.use}`}>{m.name}</option>)}</optgroup>)}
                     </select>
                     <span className="layer-r" title="R-value of this layer (between framing)">{calc ? `R-${fmt(calc.r_value, 2)}` : "—"}</span>
                     <span className="layer-btns">

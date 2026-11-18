@@ -71,6 +71,9 @@ const check = (cond, what) => { console.log(`${cond ? "ok  " : "FAIL"} ${what}`)
   await page.locator(".row").first().click();
   await page.waitForSelector(".rbig");
   check((await page.locator(".rbig").textContent()) === "R-4.8", "layer builder shows R-4.8 for the balloon-frame wall");
+  const groups = await page.locator('.layer select[aria-label="Material"]').first().locator("optgroup").evaluateAll((gs) => gs.map((g) => g.label));
+  check(["Spray foam", "Batts and blankets", "Rigid boards", "Loose fill and blown-in"].every((g) => groups.includes(g)) && !groups.some((g) => /insulation/.test(g)),
+    `material picker is grouped by material type (${groups.join(", ")})`);
 
   // Scenario view
   await page.click('nav >> text="Results"');
@@ -82,7 +85,7 @@ const check = (cond, what) => { console.log(`${cond ? "ok  " : "FAIL"} ${what}`)
   const phone = await browser.newPage({ viewport: { width: 390, height: 800 }, isMobile: true });
   await phone.goto(url);
   await phone.waitForSelector(".stat-value", { timeout: 120000 });
-  for (const tab of ["Results", "Surfaces", "Openings", "Scenarios"]) {
+  for (const tab of ["Results", "Rooms", "Assemblies", "Surfaces", "Openings", "Scenarios"]) {
     await phone.click(`nav >> text="${tab}"`);
     await phone.waitForTimeout(300);
     const overflow = await phone.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);

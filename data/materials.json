@@ -1,9 +1,24 @@
 {
- "_about": "Layer materials for the assembly builder. R-values are hr-ft2-F/Btu (per inch where stated). Every value names its source. Two entries (loose-fill cellulose and vermiculite) are still marked 'estimated' because no open source for them could be reached; data/README.md explains. Enter a measured or rated value in the house file when one is known.",
+ "_about": "Layer materials for the assembly builder. R-values are hr-ft2-F/Btu (per inch where stated). Every value names its source. Two entries (loose-fill cellulose and vermiculite) are still marked 'estimated' because no open source for them could be reached; data/README.md explains. Enter a measured or rated value in the house file when one is known. Each material has a category (its material type, listed in _categories in display order); 'use' is only a hint about where it is usually found and never limits where it can go: any insulation can fill any framed cavity.",
+ "_categories": {
+  "gypsum_plaster": "Gypsum and plaster",
+  "wood": "Wood",
+  "batts": "Batts and blankets",
+  "loose_fill": "Loose fill and blown-in",
+  "spray_foam": "Spray foam",
+  "rigid_boards": "Rigid boards",
+  "natural_fiber": "Straw and other natural fiber",
+  "masonry": "Masonry and concrete",
+  "cladding": "Cladding and siding",
+  "roofing": "Roofing",
+  "flooring": "Flooring",
+  "air_space": "Air spaces"
+ },
  "materials": [
   {
    "id": "gypsum_board",
    "name": "Gypsum board (drywall)",
+   "category": "gypsum_plaster",
    "r_per_inch_hr_ft2_f_btu_in": 0.9,
    "typical_thickness_in": 0.5,
    "use": "interior finish",
@@ -13,6 +28,7 @@
   {
    "id": "plaster_on_wood_lath",
    "name": "Plaster on wood lath",
+   "category": "gypsum_plaster",
    "r_value_hr_ft2_f_btu": 0.51,
    "typical_thickness_in": 0.875,
    "use": "interior finish",
@@ -23,6 +39,7 @@
   {
    "id": "plaster_on_metal_lath",
    "name": "Plaster on metal lath",
+   "category": "gypsum_plaster",
    "r_value_hr_ft2_f_btu": 0.23,
    "typical_thickness_in": 0.75,
    "use": "interior finish",
@@ -32,6 +49,7 @@
   {
    "id": "wood_paneling",
    "name": "Wood paneling or boards (interior)",
+   "category": "wood",
    "r_per_inch_hr_ft2_f_btu_in": 1.249,
    "typical_thickness_in": 0.75,
    "use": "interior finish",
@@ -41,6 +59,7 @@
   {
    "id": "softwood",
    "name": "Softwood lumber, boards, plywood, OSB",
+   "category": "wood",
    "r_per_inch_hr_ft2_f_btu_in": 1.249,
    "use": "framing, sheathing, subfloor",
    "source": "OpenStudio-HPXML materials.rb (commit fb18723), conductivity k converted to R per inch = 1/k",
@@ -50,6 +69,7 @@
   {
    "id": "board_sheathing",
    "name": "Board sheathing (3/4 in, straight or diagonal)",
+   "category": "wood",
    "r_per_inch_hr_ft2_f_btu_in": 1.249,
    "typical_thickness_in": 0.75,
    "use": "sheathing",
@@ -59,6 +79,7 @@
   {
    "id": "air_space_closed",
    "name": "Closed air space (empty framed cavity)",
+   "category": "air_space",
    "r_value_hr_ft2_f_btu": 1.0,
    "use": "cavity",
    "source": "OpenStudio-HPXML materials.rb Material.AirCavityClosed (R-1.0 for any enclosed gap)",
@@ -68,6 +89,7 @@
   {
    "id": "fiberglass_batt",
    "name": "Fiberglass batt",
+   "category": "batts",
    "r_per_inch_hr_ft2_f_btu_in": 3.15,
    "use": "cavity insulation",
    "source": "EnergyPlus dataset ASHRAE_2005_HOF_Materials.idf (U.S. DOE, EnergyPlus repository, datasets/), which reproduces ASHRAE Handbook of Fundamentals 2005, chapter 25, table 4: 'Mineral fiber - processed from rock, slag, or glass - 75-100mm', R = 1.94 m2-K/W = R-11.0, taken over a 3.5 in cavity",
@@ -77,6 +99,7 @@
   {
    "id": "mineral_wool_batt",
    "name": "Mineral wool batt",
+   "category": "batts",
    "r_per_inch_hr_ft2_f_btu_in": 4.2,
    "use": "cavity insulation",
    "source": "EnergyPlus dataset ASHRAE_2005_HOF_Materials.idf (U.S. DOE, EnergyPlus repository, datasets/), which reproduces ASHRAE Handbook of Fundamentals 2005, chapter 25, table 4: 'Mineral fiber - processed from rock, slag, or glass - 90mm - 19-26 kg/m3' (high-density batt), R = 2.63 m2-K/W = R-14.9 over 3.54 in",
@@ -85,6 +108,7 @@
   {
    "id": "cellulose_dense_pack",
    "name": "Cellulose, dense-packed in a closed cavity",
+   "category": "loose_fill",
    "r_per_inch_hr_ft2_f_btu_in": 3.12,
    "use": "cavity insulation",
    "source": "NREL openstudio-standards, ashrae_90_1.materials.json (entries marked 'From CEC Title24 2013', the California Energy Commission's Title 24 2013 materials list): 'Spray applied - Cellulosic fiber - 4.6 lb/ft3', k = 0.3204 Btu-in/h-ft2-F",
@@ -94,6 +118,7 @@
   {
    "id": "cellulose_loose_fill",
    "name": "Cellulose, loose fill (attic floor)",
+   "category": "loose_fill",
    "r_per_inch_hr_ft2_f_btu_in": 3.5,
    "use": "attic insulation",
    "source": "Typical published value written from memory: no open source for it could be reached from the build environment (only GitHub-hosted DOE/NREL data files were reachable), see data/README.md [CONFIRM]",
@@ -102,6 +127,7 @@
   {
    "id": "fiberglass_loose_fill",
    "name": "Fiberglass, loose fill (attic floor)",
+   "category": "loose_fill",
    "r_per_inch_hr_ft2_f_btu_in": 2.5,
    "use": "attic insulation",
    "source": "EnergyPlus dataset ASHRAE_2005_HOF_Materials.idf (U.S. DOE, EnergyPlus repository, datasets/), which reproduces ASHRAE Handbook of Fundamentals 2005, chapter 25, table 4: loose fill 'Mineral fiber (rock, slag, glass) - 95-130mm', R = 1.94 m2-K/W = R-11.0 at the 4.4 in midpoint depth",
@@ -110,6 +136,7 @@
   {
    "id": "vermiculite",
    "name": "Vermiculite, loose fill",
+   "category": "loose_fill",
    "r_per_inch_hr_ft2_f_btu_in": 2.2,
    "use": "attic insulation",
    "source": "Typical published value written from memory: no open source for it could be reached from the build environment (only GitHub-hosted DOE/NREL data files were reachable), see data/README.md [CONFIRM]",
@@ -119,6 +146,7 @@
   {
    "id": "spray_foam_closed_cell",
    "name": "Spray polyurethane foam, closed cell",
+   "category": "spray_foam",
    "r_per_inch_hr_ft2_f_btu_in": 5.0,
    "use": "cavity or roof-deck insulation",
    "source": "NREL openstudio-standards, ashrae_90_1.materials.json (entries marked 'From CEC Title24 2013', the California Energy Commission's Title 24 2013 materials list): 'Spray applied - Polyurethane foam - 3.0 lb/ft3', k = 0.20004 Btu-in/h-ft2-F",
@@ -128,6 +156,7 @@
   {
    "id": "spray_foam_open_cell",
    "name": "Spray polyurethane foam, open cell",
+   "category": "spray_foam",
    "r_per_inch_hr_ft2_f_btu_in": 3.33,
    "use": "cavity or roof-deck insulation",
    "source": "NREL openstudio-standards, ashrae_90_1.materials.json (entries marked 'From CEC Title24 2013', the California Energy Commission's Title 24 2013 materials list): 'Spray applied - Polyurethane foam - 0.5 lb/ft3', k = 0.3 Btu-in/h-ft2-F",
@@ -136,6 +165,7 @@
   {
    "id": "rigid_foam_generic",
    "name": "Rigid foam board (generic)",
+   "category": "rigid_boards",
    "r_per_inch_hr_ft2_f_btu_in": 4.9,
    "use": "continuous insulation",
    "source": "OpenStudio-HPXML materials.rb (commit fb18723), conductivity k converted to R per inch = 1/k",
@@ -144,6 +174,7 @@
   {
    "id": "xps_board",
    "name": "Extruded polystyrene (XPS) board",
+   "category": "rigid_boards",
    "r_per_inch_hr_ft2_f_btu_in": 5.0,
    "use": "continuous insulation",
    "source": "NREL openstudio-standards, ashrae_90_1.materials.json (entries marked 'From CEC Title24 2013', the California Energy Commission's Title 24 2013 materials list): 'Extruded Polystyrene - XPS', k = 0.2 Btu-in/h-ft2-F; the same as EnergyPlus dataset ASHRAE_2005_HOF_Materials.idf (U.S. DOE, EnergyPlus repository, datasets/), which reproduces ASHRAE Handbook of Fundamentals 2005, chapter 25, table 4 (k = 0.029 W/m-K)",
@@ -152,6 +183,7 @@
   {
    "id": "eps_board",
    "name": "Expanded polystyrene (EPS) board",
+   "category": "rigid_boards",
    "r_per_inch_hr_ft2_f_btu_in": 3.9,
    "use": "continuous insulation",
    "source": "EnergyPlus dataset ASHRAE_2005_HOF_Materials.idf (U.S. DOE, EnergyPlus repository, datasets/), which reproduces ASHRAE Handbook of Fundamentals 2005, chapter 25, table 4: 'Expanded polystyrene - molded beads - 16 kg/m3 density' (1 lb/ft3), k = 0.037 W/m-K",
@@ -161,6 +193,7 @@
   {
    "id": "polyiso_board",
    "name": "Polyisocyanurate board",
+   "category": "rigid_boards",
    "r_per_inch_hr_ft2_f_btu_in": 5.9,
    "use": "continuous insulation",
    "source": "NREL openstudio-standards, ashrae_90_1.materials.json (entries marked 'From CEC Title24 2013', the California Energy Commission's Title 24 2013 materials list): 'Cellular polyisocyanurate (unfaced)', k = 0.1704 Btu-in/h-ft2-F; the same value as EnergyPlus dataset ASHRAE_2005_HOF_Materials.idf (U.S. DOE, EnergyPlus repository, datasets/), which reproduces ASHRAE Handbook of Fundamentals 2005, chapter 25, table 4",
@@ -170,6 +203,7 @@
   {
    "id": "wood_siding",
    "name": "Wood siding or clapboard",
+   "category": "cladding",
    "r_per_inch_hr_ft2_f_btu_in": 1.408,
    "typical_thickness_in": 0.75,
    "use": "cladding",
@@ -179,6 +213,7 @@
   {
    "id": "vinyl_or_aluminum_siding",
    "name": "Vinyl or aluminum siding (hollow backed)",
+   "category": "cladding",
    "r_per_inch_hr_ft2_f_btu_in": 1.613,
    "typical_thickness_in": 0.375,
    "use": "cladding",
@@ -188,6 +223,7 @@
   {
    "id": "fiber_cement_siding",
    "name": "Fiber-cement siding",
+   "category": "cladding",
    "r_per_inch_hr_ft2_f_btu_in": 0.559,
    "typical_thickness_in": 0.375,
    "use": "cladding",
@@ -197,6 +233,7 @@
   {
    "id": "hardboard_siding",
    "name": "Hardboard (Masonite) siding",
+   "category": "cladding",
    "r_per_inch_hr_ft2_f_btu_in": 1.449,
    "typical_thickness_in": 0.5,
    "use": "cladding",
@@ -206,6 +243,7 @@
   {
    "id": "asbestos_cement_shingle",
    "name": "Asbestos-cement shingle siding",
+   "category": "cladding",
    "r_per_inch_hr_ft2_f_btu_in": 0.238,
    "typical_thickness_in": 0.25,
    "use": "cladding",
@@ -215,6 +253,7 @@
   {
    "id": "stucco",
    "name": "Stucco",
+   "category": "cladding",
    "r_per_inch_hr_ft2_f_btu_in": 0.222,
    "typical_thickness_in": 1.0,
    "use": "cladding",
@@ -224,6 +263,7 @@
   {
    "id": "brick",
    "name": "Brick",
+   "category": "masonry",
    "r_per_inch_hr_ft2_f_btu_in": 0.182,
    "typical_thickness_in": 4.0,
    "use": "cladding or structure",
@@ -233,6 +273,7 @@
   {
    "id": "stone",
    "name": "Stone",
+   "category": "masonry",
    "r_per_inch_hr_ft2_f_btu_in": 0.08,
    "typical_thickness_in": 1.0,
    "use": "cladding or structure",
@@ -242,6 +283,7 @@
   {
    "id": "concrete",
    "name": "Concrete",
+   "category": "masonry",
    "r_per_inch_hr_ft2_f_btu_in": 0.08,
    "use": "structure",
    "source": "OpenStudio-HPXML materials.rb (commit fb18723), conductivity k converted to R per inch = 1/k",
@@ -250,6 +292,7 @@
   {
    "id": "concrete_block_hollow",
    "name": "Concrete block, hollow core",
+   "category": "masonry",
    "r_per_inch_hr_ft2_f_btu_in": 0.2,
    "typical_thickness_in": 8.0,
    "use": "structure",
@@ -259,6 +302,7 @@
   {
    "id": "straw_bale",
    "name": "Straw bale",
+   "category": "natural_fiber",
    "r_per_inch_hr_ft2_f_btu_in": 2.4,
    "use": "structure",
    "source": "OpenStudio-HPXML materials.rb (commit fb18723), conductivity k converted to R per inch = 1/k",
@@ -267,6 +311,7 @@
   {
    "id": "asphalt_shingles_on_deck",
    "name": "Asphalt shingles",
+   "category": "roofing",
    "r_per_inch_hr_ft2_f_btu_in": 0.887,
    "typical_thickness_in": 0.25,
    "use": "roofing",
@@ -276,6 +321,7 @@
   {
    "id": "wood_shingles_roof",
    "name": "Wood shingles or shakes",
+   "category": "roofing",
    "typical_thickness_in": 0.75,
    "use": "roofing",
    "source": "EnergyPlus dataset ASHRAE_2005_HOF_Materials.idf (U.S. DOE, EnergyPlus repository, datasets/), which reproduces ASHRAE Handbook of Fundamentals 2005, chapter 25, table 4: 'Wood shingles - plain and plastic film faced', R = 0.166 m2-K/W; also 'Wood shingles - plain and plastic film faced - 3/4 in.', R = 0.937, in NREL openstudio-standards, ashrae_90_1.materials.json (entries marked 'From CEC Title24 2013', the California Energy Commission's Title 24 2013 materials list)",
@@ -285,6 +331,7 @@
   {
    "id": "metal_roofing",
    "name": "Metal roofing",
+   "category": "roofing",
    "r_value_hr_ft2_f_btu": 0.0,
    "typical_thickness_in": 0.02,
    "use": "roofing",
@@ -294,6 +341,7 @@
   {
    "id": "carpet_and_pad",
    "name": "Carpet with pad",
+   "category": "flooring",
    "r_value_hr_ft2_f_btu": 2.08,
    "typical_thickness_in": 0.5,
    "use": "floor covering",
@@ -303,6 +351,7 @@
   {
    "id": "hardwood_flooring",
    "name": "Hardwood flooring",
+   "category": "flooring",
    "r_per_inch_hr_ft2_f_btu_in": 1.249,
    "typical_thickness_in": 0.75,
    "use": "floor covering",

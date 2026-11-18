@@ -35,6 +35,17 @@ def materials() -> dict[str, dict]:
     return {m["id"]: m for m in _load("materials.json")["materials"]}
 
 
+def material_categories() -> dict[str, str]:
+    """Material types in display order (id -> name). Materials are grouped by type, never by use."""
+    return dict(_load("materials.json")["_categories"])
+
+
+def materials_by_category() -> list[tuple[str, str, list[dict]]]:
+    """(category id, category name, materials) in display order."""
+    mats = list(materials().values())
+    return [(cid, cname, [m for m in mats if m["category"] == cid]) for cid, cname in material_categories().items()]
+
+
 def glazing() -> dict[str, dict]:
     return {g["id"]: g for g in _load("glazing.json")["glazing"]}
 

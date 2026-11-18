@@ -36,8 +36,8 @@ export function refOptions(name: string, ctx: Ctx, owner?: Obj): Option[] | null
     case "room": return [...rooms, ...named(list(h, ["spaces"]).filter((s) => s.type === "conditioned"), "Conditioned spaces")];
     case "location": return [...words(["outdoors"]), ...spaces, ...rooms];
     case "material": case "framing_material":
-      return ctx.lib.materials.filter((m) => name === "material" || m.r_per_inch_hr_ft2_f_btu_in !== undefined)
-        .map((m) => ({ value: m.id, label: m.name, group: m.use }));
+      return materialsInCategoryOrder(ctx.lib).filter((m) => name === "material" || m.r_per_inch_hr_ft2_f_btu_in !== undefined)
+        .map((m) => ({ value: m.id, label: m.name, group: categoryName(ctx.lib, m.category) }));
     case "glazing": return ctx.lib.glazing.map((g) => ({ value: g.id, label: `${g.name} (U ${g.u_factor_btu_hr_ft2_f}, SHGC ${g.shgc})` }));
     case "weather_station_id": return ctx.lib.stations.map((s) => ({ value: s.id, group: s.state, label: `${s.name}, ${s.state} (${Math.round(s.heating_f)}°F / ${Math.round(s.cooling_f)}°F)` }));
     case "supply_registers": case "returns": return rooms;
@@ -218,4 +218,15 @@ export function ObjectForm({ schema, value, onChange, ctx, primary, hide, flat, 
       )}
     </div>
   );
+}
+
+/** Display name of a material category (materials are grouped by type, never by intended use). */
+export function categoryName(lib: Library, id: string): string {
+  return lib.material_categories.find((c) => c.id === id)?.name ?? id;
+}
+
+/** Materials sorted into category display order (stable within a category). */
+export function materialsInCategoryOrder(lib: Library): Library["materials"] {
+  const rank = (id: string) => { const i = lib.material_categories.findIndex((c) => c.id === id); return i < 0 ? 999 : i; };
+  return [...lib.materials].sort((a, b) => rank(a.category) - rank(b.category));
 }

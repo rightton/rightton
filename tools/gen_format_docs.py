@@ -117,19 +117,25 @@ def field_reference():
 
 
 def materials_table():
-    out = ["| Material id | Name | R per inch | Fixed R | Typical thickness (in) | Confidence | Source |",
-           "| --- | --- | --- | --- | --- | --- | --- |"]
-    for m in data.materials().values():
-        out.append(f"| `{m['id']}` | {m['name']} | {m.get('r_per_inch_hr_ft2_f_btu_in', '')} | "
-                   f"{m.get('r_value_hr_ft2_f_btu', '')} | {m.get('typical_thickness_in', '')} | {m['confidence']} | {m['source']} |")
+    out = ["Materials are grouped by type. Any material can be used in any layer: any insulation can fill any framed "
+           "cavity of any depth, in walls, roofs, ceilings or floors. \"Usually\" is only a hint.", "",
+           "| Material id | Type | Name | Usually | R per inch | Fixed R | Typical thickness (in) | Confidence | Source |",
+           "| --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
+    for _, cname, mats in data.materials_by_category():
+        for m in mats:
+            out.append(f"| `{m['id']}` | {cname} | {m['name']} | {m['use']} | {m.get('r_per_inch_hr_ft2_f_btu_in', '')} | "
+                       f"{m.get('r_value_hr_ft2_f_btu', '')} | {m.get('typical_thickness_in', '')} | {m['confidence']} | {m['source']} |")
     return "\n".join(out)
 
 
 def materials_compact():
-    out = ["| Material id | What it is | R per inch | Fixed R | Typical thickness (in) |", "| --- | --- | --- | --- | --- |"]
-    for m in data.materials().values():
-        out.append(f"| `{m['id']}` | {m['name']} | {m.get('r_per_inch_hr_ft2_f_btu_in', '')} | "
-                   f"{m.get('r_value_hr_ft2_f_btu', '')} | {m.get('typical_thickness_in', '')} |")
+    out = ["Any material can go in any layer; any insulation can fill any framed cavity.", "",
+           "| Material id | Type | What it is | R per inch | Fixed R | Typical thickness (in) |",
+           "| --- | --- | --- | --- | --- | --- |"]
+    for _, cname, mats in data.materials_by_category():
+        for m in mats:
+            out.append(f"| `{m['id']}` | {cname} | {m['name']} | {m.get('r_per_inch_hr_ft2_f_btu_in', '')} | "
+                       f"{m.get('r_value_hr_ft2_f_btu', '')} | {m.get('typical_thickness_in', '')} |")
     return "\n".join(out)
 
 
