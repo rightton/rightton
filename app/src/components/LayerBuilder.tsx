@@ -3,6 +3,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { engine, type AssemblyResult } from "../engine";
 import { fmt, isWrapped, num } from "../schemaUtil";
 import type { Json, Library, Obj } from "../types";
+import { WallSection } from "./WallSection";
 
 export function LayerBuilder({ assembly, setAssembly, lib }: { assembly: Obj; setAssembly: (a: Obj) => void; lib: Library }) {
   const layers = (Array.isArray(assembly.layers) ? assembly.layers : []) as Obj[];
@@ -246,6 +247,7 @@ export function LayerBuilder({ assembly, setAssembly, lib }: { assembly: Obj; se
             })}
           </ol>
           <button className="btn small" onClick={() => write([...layers, {}])}>+ Add layer (toward outside)</button>
+          <WallSection assembly={assembly} lib={lib} result={fresh ? result : null} />
           {runs.length > 0 || fr || assembly.framing_frac !== undefined ? framingPanel() : null}
         </>
       )}

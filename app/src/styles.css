@@ -7,6 +7,9 @@
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   color-scheme: light dark;
+  /* Section drawing (WallSection): material fills and ink */
+  --sec-ink: #3d4650; --sec-line: #59636d; --sec-air: #ffffff; --sec-plaster: #ece8df; --sec-wood: #e2c28f;
+  --sec-batt: #f6dc8a; --sec-foam: #f3eec8; --sec-board: #bfe0d4; --sec-brick: #c8735a; --sec-mortar: #efe6dc; --sec-clad: #b9c3cc;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -15,6 +18,8 @@
     --heat: #f08a54; --heat-soft: #3a2418; --cool: #63b3ed; --cool-soft: #15293a; --wet: #4fd1c0; --wet-soft: #13302d;
     --good: #5fd08f; --bad: #f2867f; --bad-soft: #3a1c1a; --warn: #f2c14e; --warn-soft: #3a2f12;
     --shadow: 0 1px 2px rgba(0, 0, 0, .4);
+    --sec-ink: #1c252b; --sec-line: #9aabb8; --sec-air: #22313a; --sec-plaster: #a9a49a; --sec-wood: #a98a5c;
+    --sec-batt: #b59e52; --sec-foam: #b4ae86; --sec-board: #7aa596; --sec-brick: #9a5440; --sec-mortar: #6b6159; --sec-clad: #7f8b95;
   }
 }
 * { box-sizing: border-box; }
@@ -140,6 +145,17 @@ details[open] > summary { margin-bottom: .6rem; }
 .layer-n { width: 1.5rem; height: 1.5rem; border-radius: 50%; background: var(--brand-soft); color: var(--brand); font-size: .78rem; font-weight: 700; display: grid; place-items: center; }
 .layer-r { font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; } .layer-btns { display: flex; }
 .layer-fields { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: .5rem; margin-top: .5rem; align-items: end; }
+.wall-section { margin: .9rem 0 0; border: 1px solid var(--line); border-radius: 9px; padding: .6rem .7rem; background: var(--surface); }
+.wall-section svg { display: block; width: 100%; max-width: 640px; height: auto; max-height: 240px; }
+.wall-section .sec-n { font-size: 11px; font-weight: 700; fill: var(--text); }
+.wall-section .sec-side { font-size: 10px; fill: var(--muted); dominant-baseline: middle; }
+.sec-legend { margin: .4rem 0 .2rem; padding-left: 1.4rem; font-size: .84rem; display: grid; gap: .1rem; }
+.sec-swatch { display: inline-block; width: .8rem; height: .8rem; border: 1px solid var(--sec-line); border-radius: 2px; margin-right: .35rem; vertical-align: -1px; background: var(--sec-air); }
+.sec-swatch[data-cat="gypsum_plaster"] { background: var(--sec-plaster); } .sec-swatch[data-cat="wood"], .sec-swatch[data-cat="flooring"] { background: var(--sec-wood); }
+.sec-swatch[data-cat="batts"], .sec-swatch[data-cat="loose_fill"], .sec-swatch[data-cat="natural_fiber"] { background: var(--sec-batt); }
+.sec-swatch[data-cat="spray_foam"] { background: var(--sec-foam); } .sec-swatch[data-cat="rigid_boards"] { background: var(--sec-board); }
+.sec-swatch[data-cat="masonry"] { background: var(--sec-brick); } .sec-swatch[data-cat="cladding"], .sec-swatch[data-cat="roofing"] { background: var(--sec-clad); }
+@media print { .wall-section { break-inside: avoid; border-color: #999; } }
 .preset-pick { max-width: 100%; min-width: 0; }
 .room-contents { margin-top: 1rem; border-top: 1px solid var(--line); padding-top: .8rem; }
 .room-contents h4 { margin: 0 0 .2rem; } .room-contents h5 { margin: .8rem 0 .35rem; font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }

@@ -98,6 +98,25 @@ const check = (cond, what) => { console.log(`${cond ? "ok  " : "FAIL"} ${what}`)
   check(["Spray foam", "Batts and blankets", "Rigid boards", "Loose fill and blown-in"].every((g) => groups.includes(g)) && !groups.some((g) => /insulation/.test(g)),
     `material picker is grouped by material type (${groups.join(", ")})`);
 
+  // Section drawing: every assembly of the old-house example draws one band per layer, members on framed layers
+  const nAsm = await page.locator(".md-list .row").count();
+  let drawn = 0;
+  for (let k = 0; k < nAsm; k++) {
+    await page.locator(".md-list .row").nth(k).click();
+    await page.waitForSelector('.rbox[aria-busy="false"]');
+    const nLayers = await page.locator(".layer-list > li.layer").count();
+    const bands = await page.locator(".wall-section svg g[transform] > g > rect").count();
+    const legend = await page.locator(".sec-legend li").count();
+    const framed = await page.locator(".layer-list > li.layer.in-cavity").count();
+    const members = await page.locator(".wall-section .sec-member").count();
+    if (nLayers > 0 && bands === nLayers && legend === nLayers && (framed === 0) === (members === 0)) drawn++;
+    else console.log(`  assembly ${k + 1}: layers ${nLayers}, bands ${bands}, legend ${legend}, framed ${framed}, members ${members}`);
+    if (k === 0) { await page.locator(".wall-section").scrollIntoViewIfNeeded(); await page.locator(".wall-section").screenshot({ path: path.join(out, "section-desktop.png") }); }
+  }
+  check(drawn === nAsm, `section drawing matches the layers of all ${nAsm} old-house assemblies (${drawn} ok)`);
+  await page.locator(".md-list .row").first().click();
+  await page.waitForSelector(".rbig");
+
   // Split cavity: 2 in closed-cell foam + 2 in mineral wool batt in a 5.5 in (2x6) cavity
   await page.click("text=+ Fill this cavity");
   const mats = page.locator('.layer select[aria-label="Material"]');
@@ -206,6 +225,11 @@ const check = (cond, what) => { console.log(`${cond ? "ok  " : "FAIL"} ${what}`)
   check(phoneOverflow <= 1, `phone: layer builder with a framed cavity fits the screen width (overflow ${phoneOverflow}px)`);
   await phone.locator(".cavity-head").scrollIntoViewIfNeeded();
   await phone.screenshot({ path: path.join(out, "layers-phone.png") });
+  await phone.waitForSelector(".wall-section svg");
+  await phone.locator(".wall-section").scrollIntoViewIfNeeded();
+  const secBox = await phone.locator(".wall-section svg").boundingBox();
+  check(secBox && secBox.width <= 390 && secBox.height > 60, `phone: section drawing fits (${secBox && Math.round(secBox.width)} x ${secBox && Math.round(secBox.height)} px)`);
+  await phone.locator(".wall-section").screenshot({ path: path.join(out, "section-phone.png") });
   // Phone: a room with its surfaces open
   await phone.click('nav >> text="Rooms"');
   await phone.locator(".row").first().click();
