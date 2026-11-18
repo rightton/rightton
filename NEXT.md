@@ -1,8 +1,37 @@
 # Next steps
 
-State on 2026-11-16: SPEC.md build priorities 1 to 6 are built. `python -m pytest core` (268 tests),
-`python validation/compare.py` (129 snapshot houses, all pass) and the browser end-to-end test
-(`app/tests/e2e.cjs`) pass locally.
+State on 2026-11-18: SPEC.md build priorities 1 to 6 are built, and issues #1 to #9 have been worked
+(see "Issues #1 to #9" below for the two that are not fully closed). `python -m pytest core` (333 tests),
+`python validation/compare.py` (129 snapshot houses, all pass, largest difference 0.00 %) and the browser
+end-to-end test (`app/tests/e2e.cjs`, desktop and phone) pass locally. House file format is now 1.1.0
+(`assemblies[].framing` and the `glazings` library); every 1.0 file still loads and calculates unchanged.
+
+## Issues #1 to #9: what is left
+
+- **#2 mineral wool board is in, but its value is not confirmed** (left open; the commit says "Refs #2").
+  R-4.2 per inch is marked `estimated` and [CONFIRM]: manufacturer data sheets (Owens Corning Thermafiber
+  RainBarrier, ROCKWOOL Comfortboard 80) were found by web search but could not be opened from the build
+  environment, and no DOE/NREL data file reachable from it lists rigid mineral wool. Open one data sheet,
+  check R per inch and test conditions (ASTM C518, 75 F mean), update the source in `data/materials.json`
+  and set confidence to `default`; the materials test then needs the [CONFIRM] assertion in
+  `core/tests/test_materials.py::test_mineral_wool_board_is_a_rigid_board` removed.
+- **#9 repository metadata is not set** (left open; "Refs #9"). An agent here cannot change repository
+  settings. Someone with admin access: Settings > General > Description: "Free, open-source residential
+  heating and cooling load calculator for real (and old) houses. An open-source alternative to Manual J
+  load calculation software. Not affiliated with or approved by ACCA; Manual J® is a registered trademark
+  of ACCA." Topics: `hvac`, `load-calculation`, `manual-j`, `building-science`, `energy-modeling`,
+  `heat-pump`, `home-energy`. Whether naming a trademark this way is fine is a legal judgment, not checked.
+- **#3 leftover cavity depth** is modeled as a closed air space of R-1.0 (OS-HPXML `AirCavityClosed`),
+  marked [CONFIRM]: the real value depends on gap width, emissivity and heat-flow direction.
+- **#4 framing allowance**: derived from the reference engine's framing factors (walls 0.23 / 0.20,
+  floors and ceilings 0.13 / 0.10, roofs 0.07); NREL does not cite where those come from, and the
+  interpolation between 16 and 24 in and the single roof value are RightTon's choices [CONFIRM]. A share
+  calculated from lumber is not varied in the input-confidence ranges (a typed `framing_frac` is).
+- **#5**: brick thicknesses (8 and 12 in) are nominal; lime plaster uses the sand-aggregate plaster value
+  [CONFIRM].
+- **#8 "prints with the report"**: the section drawing is kept in print styles, but the printable report
+  itself (priority 7) does not exist yet.
+- **#10 ground-source loop sizing** is recorded in SPEC.md "Later"; not started, by design.
 
 ## To put the web app online (needs a repository admin; an agent on a feature branch cannot do it)
 
@@ -27,7 +56,7 @@ load ranges in the core and the results view. What is left in this group:
 - **153 of the 1,018 stations have design temperatures derived from the typical-year hourly data**
   because their EPW file has no ASHRAE design-conditions header (each entry's `design_source` says so).
   Replace them with ASHRAE design values where an open source for those exists.
-- **Two material values are still estimates**: loose-fill cellulose and vermiculite (`data/materials.json`,
+- **Three material values are still estimates**: mineral wool board (see #2 above), loose-fill cellulose and vermiculite (`data/materials.json`,
   marked [CONFIRM]). No source for them could be reached (only GitHub was reachable; energy.gov, ornl.gov
   and similar are blocked there). Any citable open document that lists them will do.
 - **The input-confidence ranges are RightTon's judgment** (`data/input_ranges.json`, marked [CONFIRM]):
@@ -62,6 +91,7 @@ load ranges in the core and the results view. What is left in this group:
 ### Interface (priority 6 leftovers and priority 7)
 
 - No printable report yet (priority 7); the page has basic print styles only.
+- Assemblies added from a ready-made preset (masonry walls) are copies; there is no "update from preset".
 - Scenario changes are edited as path/value rows. Friendlier pickers ("replace this assembly",
   "add storm windows to these openings") would help homeowners.
 - The input-confidence card shows ranges for the baseline only, not for each scenario.

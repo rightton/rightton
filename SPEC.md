@@ -28,7 +28,7 @@ v1 calculates peak design loads (the equipment-size question), room by room and 
 | Heat transfer between zones (e.g. upstairs over a conditioned downstairs) | Utility-bill calibration | |
 | Custom layered assemblies, any ceiling height | Register and duct airflow by room | |
 | Measured ACH50 or estimated leakage | | |
-| Scenario comparison | | |
+| Scenario comparison | Ground-source heat pump loop (borefield) sizing from RightTon's loads, ported from OpenStudio-HPXML's geothermal loop sizing (`apply_geothermal_loop`, g-function data) and validated the same way; only after the v1 gaps in NEXT.md are closed (issue #10) | |
 | Printable report + saved project file | | |
 
 Each zone's load is the sum of its rooms at the zone's peak hour; each room's own peak is shown too.
