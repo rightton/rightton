@@ -2,7 +2,7 @@
  "$schema": "https://json-schema.org/draft/2020-12/schema",
  "$id": "https://rightton.github.io/rightton/schema/rightton-house.schema.json",
  "title": "RightTon house file",
- "description": "A house described for heating and cooling load calculation. US units only; every quantity carries its unit in its field name. Version 1.0.",
+ "description": "A house described for heating and cooling load calculation. US units only; every quantity carries its unit in its field name. Version 1.1.",
  "type": "object",
  "required": [
   "format_version",
@@ -14,7 +14,7 @@
   "format_version": {
    "type": "string",
    "pattern": "^1\\.[0-9]+\\.[0-9]+$",
-   "description": "Version of this format the file was written for, as MAJOR.MINOR.PATCH. This schema is 1.0.0. Readers accept any 1.x file."
+   "description": "Version of this format the file was written for, as MAJOR.MINOR.PATCH. This schema is 1.1.0. Readers accept any 1.x file."
   },
   "project": {
    "type": "object",
@@ -241,10 +241,59 @@
      },
      "framing_frac": {
       "$ref": "#/$defs/quantity",
-      "description": "Share of the area taken up by framing members, for assemblies with a framed layer (0.25 is typical for 16-in stud spacing with plates and headers). Default 0.",
+      "description": "Share of the area taken up by framing members, for assemblies with a framed layer. Overrides the share calculated from framing (lumber and spacing). Without either, 0. Typical: 0.23 for 2x4 walls at 16 in o.c., 0.20 for 2x6 walls at 24 in, 0.10 to 0.13 for floors and ceilings.",
       "x-unit": "0-1",
       "x-min": 0,
       "x-max": 0.99
+     },
+     "framing": {
+      "type": "object",
+      "description": "For assemblies with a framed layer: lumber size and spacing, from which RightTon works out the framing share (member width / spacing, plus a typical allowance for plates, headers, corners and window framing) and the cavity depth. Added in format 1.1. framing_frac, when given, overrides the calculated share.",
+      "properties": {
+       "lumber": {
+        "type": "string",
+        "enum": [
+         "2x4",
+         "2x6",
+         "2x8",
+         "2x10",
+         "2x12",
+         "4x4",
+         "custom"
+        ],
+        "description": "Nominal lumber size of the studs, joists or rafters. Actual sizes: 2x4 = 1.5 x 3.5 in, 2x6 = 1.5 x 5.5, 2x8 = 1.5 x 7.25, 2x10 = 1.5 x 9.25, 2x12 = 1.5 x 11.25, 4x4 = 3.5 x 3.5. \"custom\" needs width_in and depth_in."
+       },
+       "width_in": {
+        "$ref": "#/$defs/quantity",
+        "description": "Actual member width (the face that interrupts the cavity), when it differs from the nominal size (e.g. old full-dimension lumber, 2 in) or lumber is \"custom\".",
+        "x-unit": "in",
+        "x-min": 0
+       },
+       "depth_in": {
+        "$ref": "#/$defs/quantity",
+        "description": "Actual member depth, which is the cavity depth, when it differs from the nominal size or lumber is \"custom\".",
+        "x-unit": "in",
+        "x-min": 0
+       },
+       "spacing_in": {
+        "$ref": "#/$defs/quantity",
+        "description": "On-center spacing of the members: usually 12, 16, 19.2 or 24.",
+        "x-unit": "in",
+        "x-min": 0
+       },
+       "allowance_frac": {
+        "$ref": "#/$defs/quantity",
+        "description": "Extra framing share for plates, headers, corners, blocking and window/door framing. Default: derived from the reference engine's typical framing factors (about 0.137 for walls, 0.037 for floors and ceilings, 0.0075 for roofs).",
+        "x-unit": "0-1",
+        "x-min": 0,
+        "x-max": 0.9
+       }
+      },
+      "additionalProperties": false,
+      "required": [
+       "lumber",
+       "spacing_in"
+      ]
      },
      "construction": {
       "type": "string",

@@ -22,8 +22,9 @@ from typing import Any, Optional
 
 from . import data, ducts as duct_math, model as M, psychro, weather
 from .assemblies import Assembly, Layer
+from .framing import FramingShare, framing_share
 
-FORMAT_VERSION = "1.0.0"
+FORMAT_VERSION = "1.1.0"  # 1.1: assemblies[].framing
 SUPPORTED_MAJOR = 1
 
 SECTION_LISTS = ("assemblies", "zones", "rooms", "spaces", "surfaces", "openings", "equipment", "scenarios")
@@ -263,8 +264,43 @@ def assembly_for_surface(asm: dict, surface_type: str, exposed_to_wind: bool,
     position = {"wall": "wall", "rim_joist": "wall", "foundation_wall": "wall", "roof": "roof",
                 "ceiling": "ceiling", "floor": "floor"}[surface_type]
     return Assembly(name=asm.get("name", asm["id"]), layers=layers, position=position,
-                    framing_fraction=asm.get("framing_frac", 0.0), exposed_to_wind=exposed_to_wind,
+                    framing_fraction=framing_fraction(asm, surface_type), exposed_to_wind=exposed_to_wind,
                     roof_pitch_rise_per_12=roof_pitch_rise_per_12 if position == "roof" else 0.0)
+
+
+def assembly_framing(asm: dict, surface_type: Optional[str] = None) -> Optional[FramingShare]:
+    """Framing share worked out from the assembly's framing entry (lumber and spacing), or None."""
+    fr = asm.get("framing")
+    if not fr:
+        return None
+    try:
+        return framing_share(surface_type or asm.get("type", "wall"), fr["spacing_in"], fr.get("lumber", "custom"),
+                             fr.get("width_in"), fr.get("depth_in"), fr.get("allowance_frac"))
+    except (ValueError, KeyError) as e:
+        raise HouseFileError(f"Assembly {label(asm)}, framing: {e}") from None
+
+
+def framed_cavities(asm: dict) -> list[tuple[int, int, float]]:
+    """(first layer index, last layer index, total thickness in) of each run of consecutive framed
+    layers: one framed cavity, possibly split into several fills."""
+    runs, start = [], None
+    layers = asm.get("layers", [])
+    for i, lay in enumerate(layers + [{}]):
+        framed = bool(lay.get("framing_material")) or lay.get("framing_r_per_inch_hr_ft2_f_btu_in") is not None
+        if framed and start is None:
+            start = i
+        elif not framed and start is not None:
+            runs.append((start, i - 1, round(sum(float(layers[j].get("thickness_in", 0.0)) for j in range(start, i)), 4)))
+            start = None
+    return runs
+
+
+def framing_fraction(asm: dict, surface_type: Optional[str] = None) -> float:
+    """framing_frac when given (an override), else the share from framing (lumber, spacing), else 0."""
+    if asm.get("framing_frac") is not None:
+        return asm["framing_frac"]
+    share = assembly_framing(asm, surface_type)
+    return share.total_frac if share else 0.0
 
 
 def assembly_r_value(asm: dict, surface_type: str, exposed_to_wind: bool,

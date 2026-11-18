@@ -6,7 +6,7 @@ RightTon calculates heating and cooling design loads from the file. This guide i
 ## Output rules
 
 - Output a single YAML document (or JSON if asked) and nothing else inside the code block. File name `*.rtn.yaml`.
-- Start with `format_version: 1.0.0`.
+- Start with `format_version: 1.1.0`.
 - Use ONLY the field names in this guide. Unknown fields are errors. Every unit is in the field name
   (`area_ft2`, `height_ft`, `thickness_in`); never invent `area`, `height`, `r_value`.
 - US units. Numbers are bare numbers without units or quotes. Fractions (`_frac`) are 0 to 1, not percent.
@@ -22,7 +22,7 @@ RightTon calculates heating and cooling design loads from the file. This guide i
 ## Skeleton
 
 ```yaml
-format_version: 1.0.0
+format_version: 1.1.0
 project: {name: ..., description: ..., bedroom_count: 3}
 location: {weather_station_id: "725650"}       # or design_conditions, see below
 assemblies: [ ... ]     # constructions, each defined once
@@ -62,6 +62,12 @@ Other optional overrides: `elevation_ft`, `heating_setpoint_f` (default 70), `co
 - A framed layer (studs, joists, rafters with fill between them) adds `framing_material: softwood` (or
   `framing_r_per_inch_hr_ft2_f_btu_in`) and needs `thickness_in`; then set `framing_frac` on the assembly
   (0.25 studs at 16 in, 0.2 at 24 in, 0.1 joists/rafters).
+- Better than guessing `framing_frac` (format 1.1+): give `framing: {lumber: 2x4|2x6|2x8|2x10|2x12|4x4|custom,
+  spacing_in: 16}` and leave `framing_frac` out; the share (member width / spacing + an allowance for
+  plates and headers) is calculated, and the lumber's depth is the cavity depth the framed layers must add
+  up to (2x4 = 3.5 in, 2x6 = 5.5, 2x8 = 7.25, 2x10 = 9.25, 2x12 = 11.25). For old full-dimension or other
+  odd lumber add `width_in` and `depth_in` (actual inches). `allowance_frac` overrides the allowance.
+  `framing_frac`, if also given, wins.
 - Split cavity (foam then batt in one stud bay): one framed layer per fill, consecutively; their
   thicknesses must add up to the cavity depth. Unfilled depth: a last framed layer
   `{material: air_space_closed, thickness_in: <leftover>, framing_material: softwood}`.
@@ -198,6 +204,7 @@ Paths: `air/infiltration/air_changes_per_hr_at_50pa`, `surfaces/north-wall/assem
 | --- | --- |
 | `daily_temp_range (location.design_conditions)` | low, medium, high |
 | `type (assemblies)` | wall, roof, ceiling, floor |
+| `lumber (assemblies.framing)` | 2x4, 2x6, 2x8, 2x10, 2x12, 4x4, custom |
 | `construction (assemblies)` | wood_stud, steel_stud, double_wood_stud, sip, cmu, brick, adobe, concrete, stone, log, icf, straw_bale |
 | `cladding (assemblies)` | wood, vinyl, aluminum, fiber_cement, stucco, shingle, brick, stone, other, none |
 | `roofing (assemblies)` | asphalt_shingles, wood_shingles, metal, clay_tile, concrete, plastic_rubber, eps, shingles |
@@ -355,7 +362,7 @@ A small one-story house: two rooms, vented attic, slab on grade, furnace and air
 
 ```yaml
 # guide-example
-format_version: 1.0.0
+format_version: 1.1.0
 project:
   name: Example two-room house
   bedroom_count: 1

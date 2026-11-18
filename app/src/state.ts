@@ -29,7 +29,7 @@ function reducer(state: State, action: Action): State {
 
 export function emptyHouse(): House {
   return {
-    format_version: "1.0.0",
+    format_version: "1.1.0",
     project: { name: "New house" },
     location: {},
     assemblies: [],

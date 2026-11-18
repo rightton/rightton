@@ -94,6 +94,11 @@ understand and write them back unchanged.
 `format_version` is `MAJOR.MINOR.PATCH`. Readers accept any file with the same major version, including
 older minor versions. A breaking change raises the major version and ships with a converter.
 
+| Version | What changed |
+| --- | --- |
+| 1.0.0 | First published format. |
+| 1.1.0 | `assemblies[].framing` (lumber size and spacing; the framing share and cavity depth are calculated from it). Every 1.0 file is a valid 1.1 file. |
+
 ## Checking a file
 
 ```bash
@@ -111,7 +116,7 @@ of numeric inputs) and `x-discriminator` are extra information that such librari
 <!-- BEGIN GENERATED: field-reference -->
 | Top-level field | Required | Meaning |
 | --- | --- | --- |
-| `format_version` | yes | Version of this format the file was written for, as MAJOR.MINOR.PATCH. This schema is 1.0.0. Readers accept any 1.x file. |
+| `format_version` | yes | Version of this format the file was written for, as MAJOR.MINOR.PATCH. This schema is 1.1.0. Readers accept any 1.x file. |
 | `project` |  | About the project. Never put a street address, an owner's name or other personal details here. |
 | `location` |  | Where the house is, as a weather station. There is no address field. |
 | `assemblies` |  | Library of constructions (walls, roofs, ceilings, floors), each defined once and used by id from surfaces. |
@@ -186,7 +191,8 @@ One construction. Give either layers (R-value is calculated, air films added aut
 | `type` | yes | one of: `wall`, `roof`, `ceiling`, `floor` | What the assembly is used for. It sets which air films are added. |
 | `r_value_hr_ft2_f_btu` |  | number (hr-ft2-F/Btu, at least 0) | R-value of the whole assembly INCLUDING air films, when layers are not given. |
 | `layers` |  | list | Layers from the inside face to the outside face. Do not include air films. |
-| `framing_frac` |  | number (0-1, 0 to 0.99) | Share of the area taken up by framing members, for assemblies with a framed layer (0.25 is typical for 16-in stud spacing with plates and headers). Default 0. |
+| `framing_frac` |  | number (0-1, 0 to 0.99) | Share of the area taken up by framing members, for assemblies with a framed layer. Overrides the share calculated from framing (lumber and spacing). Without either, 0. Typical: 0.23 for 2x4 walls at 16 in o.c., 0.20 for 2x6 walls at 24 in, 0.10 to 0.13 for floors and ceilings. |
+| `framing` |  | object | For assemblies with a framed layer: lumber size and spacing, from which RightTon works out the framing share (member width / spacing, plus a typical allowance for plates, headers, corners and window framing) and the cavity depth. Added in format 1.1. framing_frac, when given, overrides the calculated share. |
 | `construction` |  | one of: `wood_stud`, `steel_stud`, `double_wood_stud`, `sip`, `cmu`, `brick`, `adobe`, `concrete`, `stone`, `log`, `icf`, `straw_bale` | Walls: structural type, used to estimate how slowly the wall passes summer heat. Default "wood_stud". |
 | `cladding` |  | one of: `wood`, `vinyl`, `aluminum`, `fiber_cement`, `stucco`, `shingle`, `brick`, `stone`, `other`, `none` | Walls: exterior finish. Only "brick" and "stone" change the calculation. Default "wood". |
 | `solar_absorptance_frac` |  | number (0-1, 0 to 1) | Walls: share of sunlight the exterior absorbs: about 0.3 white, 0.5 light, 0.7 medium, 0.9 dark. Default 0.7. |
@@ -208,6 +214,18 @@ One layer, listed from the inside face to the outside face. Give material (with 
 | `framing_material` |  | text | For a framed layer: id of the material of the framing members (usually softwood). |
 | `framing_r_per_inch_hr_ft2_f_btu_in` |  | number (hr-ft2-F/Btu per in, at least 0) | For a framed layer: R per inch of the framing members, as an alternative to framing_material. |
 | `source` |  | text | Where the R-value came from. |
+
+##### assemblies (each item) > framing
+
+For assemblies with a framed layer: lumber size and spacing, from which RightTon works out the framing share (member width / spacing, plus a typical allowance for plates, headers, corners and window framing) and the cavity depth. Added in format 1.1. framing_frac, when given, overrides the calculated share.
+
+| Field | Required | Type and unit | Meaning |
+| --- | --- | --- | --- |
+| `lumber` | yes | one of: `2x4`, `2x6`, `2x8`, `2x10`, `2x12`, `4x4`, `custom` | Nominal lumber size of the studs, joists or rafters. Actual sizes: 2x4 = 1.5 x 3.5 in, 2x6 = 1.5 x 5.5, 2x8 = 1.5 x 7.25, 2x10 = 1.5 x 9.25, 2x12 = 1.5 x 11.25, 4x4 = 3.5 x 3.5. "custom" needs width_in and depth_in. |
+| `width_in` |  | number (in, at least 0) | Actual member width (the face that interrupts the cavity), when it differs from the nominal size (e.g. old full-dimension lumber, 2 in) or lumber is "custom". |
+| `depth_in` |  | number (in, at least 0) | Actual member depth, which is the cavity depth, when it differs from the nominal size or lumber is "custom". |
+| `spacing_in` | yes | number (in, at least 0) | On-center spacing of the members: usually 12, 16, 19.2 or 24. |
+| `allowance_frac` |  | number (0-1, 0 to 0.9) | Extra framing share for plates, headers, corners, blocking and window/door framing. Default: derived from the reference engine's typical framing factors (about 0.137 for walls, 0.037 for floors and ceilings, 0.0075 for roofs). |
 
 ### zones
 

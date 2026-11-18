@@ -73,7 +73,7 @@ def test_assembly_layer_builder():
 
 def test_library_and_conversions():
     lib = call("library", {})
-    assert lib["format_version"] == "1.0.0" and len(lib["stations"]) >= 20 and lib["schema"]["title"]
+    assert lib["format_version"] == "1.1.0" and len(lib["stations"]) >= 20 and lib["schema"]["title"]
     text = (EXAMPLES / "old-house.rtn.yaml").read_text()
     as_json = call("to_json", {"text": text, "format": "yaml"})
     assert as_json == (EXAMPLES / "old-house.rtn.json").read_text()

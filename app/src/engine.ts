@@ -49,6 +49,9 @@ class Engine {
 
 export type AssemblyResult = {
   ok: boolean; error?: string; from_layers?: boolean; r_value?: number; u_factor?: number; r_value_sheltered?: number;
+  framing_frac_used?: number;
+  framing?: { width_in: number; depth_in: number; spacing_in: number; member_frac: number; allowance_frac: number;
+    allowance_overridden: boolean; total_frac: number; overridden_by_framing_frac: boolean; source: string } | null;
   cavity_path_r?: number; framing_path_r?: number; film_inside_r?: number; film_outside_r?: number;
   layers?: { name: string; r_value: number; framing_r_value: number | null }[];
 };

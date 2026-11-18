@@ -100,6 +100,24 @@ const check = (cond, what) => { console.log(`${cond ? "ok  " : "FAIL"} ${what}`)
   await page.screenshot({ path: path.join(out, "split-cavity-desktop.png"), fullPage: false });
   await page.click('button[aria-label="Undo"]');
 
+  // Framing share from lumber and spacing (sunroom wall: 2x4 studs with an R-11 batt, typed share 30 %)
+  await page.locator(".row").nth(1).click();
+  await page.waitForSelector(".framing-panel");
+  const sumRows = async () => { await page.waitForSelector(".framing-sum"); await page.waitForSelector('.rbox[aria-busy="false"]'); return (await page.locator(".framing-sum td").allTextContents()).map((t) => t.trim()); };
+  await page.fill('input[aria-label="Framing share override (%)"]', "");
+  await page.selectOption('select[aria-label="Lumber"]', "2x4");
+  await page.selectOption('select[aria-label="Spacing"]', "16");
+  let rows = await sumRows();
+  check(rows[0] === "9.4%" && rows[2] === "23.0%", `2x4 at 16 in: studs 9.4 % + allowance = framing share 23.0 % (${rows.join(" | ")})`);
+  await page.selectOption('select[aria-label="Lumber"]', "2x6");
+  await page.selectOption('select[aria-label="Spacing"]', "24");
+  rows = await sumRows();
+  check(rows[0] === "6.3%" && rows[2] === "20.0%", `2x6 at 24 in: studs 6.3 % + allowance = framing share 20.0 % (${rows.join(" | ")})`);
+  check((await page.locator('input[aria-label="Cavity depth (in)"]').inputValue()) === "5.5", "2x6 lumber sets the cavity depth to 5.5 in (the rest of the batt's cavity is air space)");
+  await page.locator(".framing-panel").scrollIntoViewIfNeeded();
+  await page.screenshot({ path: path.join(out, "framing-desktop.png") });
+  for (let k = 0; k < 6; k++) await page.click('button[aria-label="Undo"]');
+
   // Scenario view
   await page.click('nav >> text="Results"');
   await page.selectOption("#scn", "everything");

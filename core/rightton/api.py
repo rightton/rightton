@@ -159,6 +159,12 @@ def assembly(asm: dict) -> dict:
             r = housefile.assembly_r_value(asm, kind, True)
             return {"ok": True, "r_value": round(r, 2), "u_factor": round(1.0 / r, 4), "layers": [], "from_layers": False}
         built = housefile.assembly_for_surface(asm, kind, True)
+        share = housefile.assembly_framing(asm)
+        framing_info = None if share is None else {
+            "width_in": share.width_in, "depth_in": share.depth_in, "spacing_in": share.spacing_in,
+            "member_frac": round(share.member_frac, 4), "allowance_frac": round(share.allowance_frac, 4),
+            "allowance_overridden": share.allowance_overridden, "total_frac": round(share.total_frac, 4),
+            "overridden_by_framing_frac": asm.get("framing_frac") is not None, "source": share.source}
         sheltered = housefile.assembly_for_surface(asm, kind, False)
         cavity, framing = built.path_r_values()
         return {
@@ -167,6 +173,7 @@ def assembly(asm: dict) -> dict:
             "r_value_sheltered": round(sheltered.r_value(), 2),
             "cavity_path_r": round(cavity, 2), "framing_path_r": round(framing, 2),
             "film_inside_r": round(built.film_inside_r, 2), "film_outside_r": round(built.film_outside_r, 2),
+            "framing_frac_used": round(built.framing_fraction, 4), "framing": framing_info,
             "layers": [{"name": lay.name, "r_value": round(lay.cavity_r, 2),
                         "framing_r_value": round(lay.framing_r, 2) if lay.framing_r_per_inch is not None else None}
                        for lay in built.layers],
@@ -183,6 +190,7 @@ def library() -> dict:
         "materials": list(data.materials().values()),
         "material_categories": [{"id": cid, "name": name} for cid, name in data.material_categories().items()],
         "glazing": list(data.glazing().values()),
+        "framing": {"lumber": data.framing()["lumber"], "spacings_in": data.framing()["spacings_in"]},
         "stations": [{"id": sid, "name": s["city"], "state": s.get("state", ""), "heating_f": s["heating_drybulb_f"],
                       "cooling_f": s["cooling_drybulb_f"], "latitude_deg": s["latitude_deg"]}
                      for sid, s in data.weather_stations().items()],

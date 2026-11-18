@@ -47,13 +47,88 @@ export function LayerBuilder({ assembly, setAssembly, lib }: { assembly: Obj; se
   const [depthText, setDepthText] = useState<Record<number, string>>({});
   const [depthError, setDepthError] = useState<Record<number, string>>({});
   const round3 = (x: number) => Math.round(x * 1000) / 1000;
-  const writeRun = (r: { start: number; end: number }, fills: Obj[], depth: number) => {
+  const runWithDepth = (r: { start: number; end: number }, fills: Obj[], depth: number): Obj[] => {
     const used = fills.reduce((a, l) => a + thick(l), 0);
     const framing = { framing_material: layers[r.start].framing_material, framing_r_per_inch_hr_ft2_f_btu_in: layers[r.start].framing_r_per_inch_hr_ft2_f_btu_in };
     for (const k of Object.keys(framing) as (keyof typeof framing)[]) if (framing[k] === undefined) delete framing[k];
     const rest = round3(depth - used);
-    const run = rest > 0.01 ? [...fills, { material: "air_space_closed", thickness_in: rest, ...framing } as Obj] : fills;
-    write([...layers.slice(0, r.start), ...run, ...layers.slice(r.end + 1)]);
+    return rest > 0.01 ? [...fills, { material: "air_space_closed", thickness_in: rest, ...framing } as Obj] : fills;
+  };
+  const writeRun = (r: { start: number; end: number }, fills: Obj[], depth: number) =>
+    write([...layers.slice(0, r.start), ...runWithDepth(r, fills, depth), ...layers.slice(r.end + 1)]);
+  const fillsOf = (r: { start: number; end: number }) => { const li = leftoverIndex(r); return layers.slice(r.start, (li < 0 ? r.end : li - 1) + 1); };
+  // Layers with every framed cavity set to a new depth (from the lumber size), where the fills fit.
+  const layersAtDepth = (depth: number): Obj[] => {
+    let next = [...layers];
+    for (const r of [...runs].reverse()) {
+      const fills = fillsOf(r);
+      if (fills.reduce((a, l) => a + thick(l), 0) <= depth + 0.01) next = [...next.slice(0, r.start), ...runWithDepth(r, fills, depth), ...next.slice(r.end + 1)];
+    }
+    return next;
+  };
+
+  // Framing from lumber size and spacing (format 1.1). The share itself is calculated by the core.
+  const fr = (assembly.framing && typeof assembly.framing === "object" && !Array.isArray(assembly.framing) ? assembly.framing : null) as Obj | null;
+  const sizes = lib.framing.lumber;
+  const setFraming = (next: Obj | null, newDepth?: number) => {
+    const a: Obj = { ...assembly };
+    if (next) a.framing = next; else delete a.framing;
+    if (newDepth !== undefined && runs.length) a.layers = layersAtDepth(newDepth) as Json;
+    setAssembly(a);
+  };
+  const setFramingField = (k: string, v: Json | undefined) => {
+    const next: Obj = { ...(fr ?? { lumber: "2x4", spacing_in: 16 }) };
+    if (v === undefined) delete next[k]; else next[k] = v;
+    const lumber = next.lumber as string;
+    const depth = num(next.depth_in) ?? sizes[lumber]?.depth_in;
+    const depthChanged = k === "lumber" || k === "depth_in";
+    setFraming(next, depthChanged ? depth : undefined);
+  };
+  const framingPanel = (): ReactNode => {
+    const info = fresh && result?.ok ? result.framing : null;
+    const lumber = (fr?.lumber as string) ?? "";
+    const spacing = num(fr?.spacing_in);
+    const preset = lib.framing.spacings_in.includes(spacing as number);
+    const pct = (x: number | undefined) => (x === undefined ? "—" : `${fmt(x * 100, 1)}%`);
+    const override = num(assembly.framing_frac);
+    return (
+      <div className="framing-panel">
+        <h4>Framing</h4>
+        <div className="framing-fields">
+          <label>Lumber<select aria-label="Lumber" value={lumber} onChange={(e) => e.target.value === "" ? setFraming(null) : setFramingField("lumber", e.target.value)}>
+            <option value="">Not given</option>
+            {Object.entries(sizes).map(([k, v]) => <option key={k} value={k}>{k} ({v.width_in} × {v.depth_in} in)</option>)}
+            <option value="custom">Custom size</option>
+          </select></label>
+          {fr && <label>Spacing (in o.c.)<select aria-label="Spacing" value={preset ? String(spacing) : "custom"} onChange={(e) => setFramingField("spacing_in", e.target.value === "custom" ? (spacing ?? 16) + 0.5 : Number(e.target.value))}>
+            {lib.framing.spacings_in.map((x) => <option key={x} value={x}>{x} in</option>)}
+            <option value="custom">Other</option>
+          </select></label>}
+          {fr && !preset && <label>Spacing (in)<input type="text" inputMode="decimal" aria-label="Custom spacing (in)" value={spacing ?? ""} onChange={(e) => setFramingField("spacing_in", e.target.value === "" ? undefined : Number(e.target.value))} /></label>}
+          {fr && <label>Width (in)<input type="text" inputMode="decimal" aria-label="Member width (in)" value={num(fr.width_in) ?? ""} placeholder={sizes[lumber] ? String(sizes[lumber].width_in) : "required"}
+            onChange={(e) => setFramingField("width_in", e.target.value === "" || Number.isNaN(Number(e.target.value)) ? undefined : Number(e.target.value))} /></label>}
+          {fr && <label>Depth (in)<input type="text" inputMode="decimal" aria-label="Member depth (in)" value={num(fr.depth_in) ?? ""} placeholder={sizes[lumber] ? String(sizes[lumber].depth_in) : "required"}
+            onChange={(e) => setFramingField("depth_in", e.target.value === "" || Number.isNaN(Number(e.target.value)) ? undefined : Number(e.target.value))} /></label>}
+        </div>
+        {!fr && <p className="help">Pick the stud, joist or rafter size and spacing and the framing share is worked out for you; or type the share below.</p>}
+        {fr && <p className="help">Width and depth are the actual size; change them for old full-dimension lumber (a rough-sawn 2x4 is about 2 × 4 in). The depth is the cavity depth.</p>}
+        {fr && info && (
+          <table className="framing-sum"><tbody>
+            <tr><th scope="row">Studs, joists or rafters ({info.width_in} in every {info.spacing_in} in)</th><td>{pct(info.member_frac)}</td></tr>
+            <tr><th scope="row">Plates, headers, corners, window framing{info.allowance_overridden ? " (entered)" : " (typical)"}</th>
+              <td><input type="text" inputMode="decimal" aria-label="Allowance (%)" className="pct" value={num(fr.allowance_frac) !== undefined ? String(round3((num(fr.allowance_frac) as number) * 100)) : ""} placeholder={fmt(info.allowance_frac * 100, 1)}
+                onChange={(e) => setFramingField("allowance_frac", e.target.value === "" || Number.isNaN(Number(e.target.value)) ? undefined : Number(e.target.value) / 100)} />%</td></tr>
+            <tr className="total"><th scope="row">Framing share{info.overridden_by_framing_frac ? " (calculated, not used)" : ""}</th><td>{pct(info.total_frac)}</td></tr>
+          </tbody></table>
+        )}
+        {fr && !info && result && !result.ok && <p className="help warn">{result.error}</p>}
+        {fr && !info && !(result && !result.ok) && <p className="help">Calculating…</p>}
+        <label className="override">{fr ? "Override framing share (%)" : "Framing share of area (%)"}
+          <input type="text" inputMode="decimal" aria-label="Framing share override (%)" value={override !== undefined ? String(round3(override * 100)) : ""} placeholder={fr ? "use calculated" : "0"}
+            onChange={(e) => { const a: Obj = { ...assembly }; const v = e.target.value; if (v === "" || Number.isNaN(Number(v))) delete a.framing_frac; else a.framing_frac = Number(v) / 100; setAssembly(a); }} /></label>
+        {info && <p className="help">The typical allowance comes from the framing factors the reference engine (OpenStudio-HPXML) uses; see data/README.md. Type your own if you know better.</p>}
+      </div>
+    );
   };
   const setDepth = (r: { start: number; end: number }, raw: string) => {
     setDepthText({ ...depthText, [r.start]: raw });
@@ -99,7 +174,7 @@ export function LayerBuilder({ assembly, setAssembly, lib }: { assembly: Obj; se
           <button className="btn small" onClick={() => addFill(r)}>{fillCount === 0 ? "+ Fill this cavity" : fillCount === 1 ? "Split cavity: add a fill" : "+ Add fill"}</button>
         </div>
         {err ? <p className="help warn" role="alert">{err}</p>
-          : <p className="help">{li >= 0 ? `${round3(thick(layers[li]))} in ${fillCount ? "left over" : "of empty cavity"} is counted as a closed air space (R-1.0).` : "The fills below share one set of framing members."} Fills are listed inside to outside.</p>}
+          : <p className="help">{fr && sizes[(fr.lumber as string)] && Math.abs((num(fr.depth_in) ?? sizes[fr.lumber as string].depth_in) - depth) > 0.01 ? `The ${fr.lumber} framing is ${num(fr.depth_in) ?? sizes[fr.lumber as string].depth_in} in deep. ` : ""}{li >= 0 ? `${round3(thick(layers[li]))} in ${fillCount ? "left over" : "of empty cavity"} is counted as a closed air space (R-1.0).` : "The fills below share one set of framing members."} Fills are listed inside to outside.</p>}
       </li>
     );
   };
@@ -171,6 +246,7 @@ export function LayerBuilder({ assembly, setAssembly, lib }: { assembly: Obj; se
             })}
           </ol>
           <button className="btn small" onClick={() => write([...layers, {}])}>+ Add layer (toward outside)</button>
+          {runs.length > 0 || fr || assembly.framing_frac !== undefined ? framingPanel() : null}
         </>
       )}
       <div className={`rbox ${result && !result.ok ? "bad" : ""}${fresh ? "" : " stale"}`} aria-busy={!fresh}>

@@ -14,6 +14,7 @@ export type Library = {
   materials: { id: string; name: string; r_per_inch_hr_ft2_f_btu_in?: number; r_value_hr_ft2_f_btu?: number;
     typical_thickness_in?: number; category: string; use: string; source: string; confidence: string; note?: string }[];
   material_categories: { id: string; name: string }[];
+  framing: { lumber: Record<string, { width_in: number; depth_in: number }>; spacings_in: number[] };
   glazing: { id: string; name: string; u_factor_btu_hr_ft2_f: number; shgc: number }[];
   stations: { id: string; name: string; state: string; heating_f: number; cooling_f: number; latitude_deg: number }[];
   defaults: Record<string, { value: Json; unit: string; applies_when: string; source: string; confidence: string }>;

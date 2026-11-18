@@ -1,0 +1,20 @@
+{
+ "_about": "Lumber sizes and typical framing factors for working out the framing share of a framed assembly from lumber size and spacing. Framing share = member share (actual member width / spacing) + an allowance for plates, headers, corners, blocking and window/door framing. The allowance is derived from the reference engine's typical framing factors: allowance = typical framing factor - member share at the same spacing. Between tabulated spacings the allowance is interpolated linearly, outside them the nearest value is used [CONFIRM: interpolation is RightTon's choice, not from the source].",
+ "lumber": {
+  "2x4": {"width_in": 1.5, "depth_in": 3.5},
+  "2x6": {"width_in": 1.5, "depth_in": 5.5},
+  "2x8": {"width_in": 1.5, "depth_in": 7.25},
+  "2x10": {"width_in": 1.5, "depth_in": 9.25},
+  "2x12": {"width_in": 1.5, "depth_in": 11.25},
+  "4x4": {"width_in": 3.5, "depth_in": 3.5}
+ },
+ "lumber_source": "OpenStudio-HPXML materials.rb (commit fb18723), Material.Stud2x: actual (dressed) size of nominal 1, 2, 3, 4, 6, 8, 10, 12 in = 0.75, 1.5, 2.5, 3.5, 5.5, 7.25, 9.25, 11.25 in. A nominal 2x member is Stud2x(2) = 1.5 in wide; a 4x4 is Stud2x(4) = 3.5 in each way. Old rough-sawn (full-dimension) lumber is larger: enter its measured size as custom.",
+ "spacings_in": [12, 16, 19.2, 24],
+ "typical_framing_factors": {
+  "wall": [{"spacing_in": 16, "framing_factor_frac": 0.23, "lumber": "2x4"}, {"spacing_in": 24, "framing_factor_frac": 0.20, "lumber": "2x6"}],
+  "floor": [{"spacing_in": 16, "framing_factor_frac": 0.13, "lumber": "2x4"}, {"spacing_in": 24, "framing_factor_frac": 0.10, "lumber": "2x6"}],
+  "ceiling": [{"spacing_in": 16, "framing_factor_frac": 0.13, "lumber": "2x4"}, {"spacing_in": 24, "framing_factor_frac": 0.10, "lumber": "2x6"}],
+  "roof": [{"spacing_in": 24, "framing_factor_frac": 0.07, "lumber": "2x6 or 2x8"}]
+ },
+ "typical_framing_factors_source": "OpenStudio-HPXML constructions.rb (commit fb18723): the WoodStudConstructionSet framing factors the reference engine uses when it builds a wood-framed construction for a given assembly R-value. Walls (apply_wall_construction): 2x4 at 16 in o.c. 0.23, 2x6 at 24 in o.c. 0.20. Floors and ceilings (apply_floor_ceiling_construction): 2x4 at 16 in o.c. 0.13, 2x6 at 24 in o.c. 0.10. Closed-cavity roofs (apply_roof): 2x6 and 2x8 at 24 in o.c. 0.07. The roof value has only one spacing, so the roof allowance is the same at every spacing [CONFIRM]."
+}

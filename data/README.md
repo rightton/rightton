@@ -9,7 +9,7 @@ Every data file lists where its values come from.
 | `input_ranges.json` | How far each kind of unmeasured input is moved (low and high) to work out the load range shown as "input confidence" | RightTon's own judgment, not a published source [CONFIRM]; each rule says what it covers. Review these before relying on the ranges. |
 | `defaults.json` | Defaults RightTon applies to left-out inputs | Mostly OpenStudio-HPXML `defaults.rb`; each entry names its source |
 | `ashrae622_wsf.csv` | Weather and shielding factor (WSF) by weather-station WMO number, used to turn a leakage area into annual-average natural air changes | Copied unchanged from OpenStudio-HPXML (`HPXMLtoOpenStudio/resources/data/ashrae622_wsf.csv`, commit fb18723), BSD-style license, see `core/NOTICE-OpenStudio-HPXML.md`. NREL attributes the values to ASHRAE Standard 62.2. |
-
+| `framing.json` | Actual sizes of nominal lumber, and the typical framing factors from which the allowance for plates, headers, corners and window framing is derived | OpenStudio-HPXML `materials.rb` (`Material.Stud2x`) and `constructions.rb` (`WoodStudConstructionSet` framing factors), commit fb18723, BSD-style license. See "Framing" below. |
 | `weather_stations.json` | Design summaries (design temperatures, humidity, latitude, elevation, ground temperatures, weather and shielding factor) for 1,018 U.S. weather stations, keyed by WMO station number | Built by `tools/build_weather_stations.py` from the TMY3 EPW files of the **EnergyPlus weather data collection** published by the U.S. Department of Energy / NREL (<https://energyplus.net/weather>; index: `weather/master.geojson` in the EnergyPlus repository), fetched by `tools/download_tmy3_epw.py` on 2026-11-16. TMY3 is NREL's 1991-2005 typical meteorological year data set (Wilcox and Marion, *Users Manual for TMY3 Data Sets*, NREL/TP-581-43156, 2008). |
 
 ## Weather stations: what is and is not in the table
@@ -38,3 +38,21 @@ A test (`test_sourced_material_values`) repeats the unit conversion from each so
 Rated products vary. Closed-cell spray foam and foil-faced polyisocyanurate are often rated higher than the generic values here; the builder lets the user enter the rated R-value of any layer.
 
 Weather files (EPW) themselves are not stored here; the engine reads any EPW file the user supplies.
+
+## Framing: where the framing share comes from
+
+Framing share = member share + allowance.
+
+- **Member share** = actual member width / on-center spacing (1.5 / 16 = 0.094 for 2x4 at 16 in). Actual sizes
+  come from OpenStudio-HPXML `materials.rb` `Material.Stud2x` (2x4 = 1.5 x 3.5 in, 2x6 = 1.5 x 5.5, 2x8 = 1.5 x 7.25,
+  2x10 = 1.5 x 9.25, 2x12 = 1.5 x 11.25, 4x4 = 3.5 x 3.5). The lumber depth is also the cavity depth.
+- **Allowance** for plates, headers, corners, blocking and window/door framing = the reference engine's typical
+  framing factor minus the member share at the same spacing. The typical framing factors are the ones
+  OpenStudio-HPXML `constructions.rb` uses to build wood-framed constructions: walls 0.23 (2x4 at 16 in) and 0.20
+  (2x6 at 24 in), floors and ceilings 0.13 and 0.10, closed-cavity roofs 0.07 (24 in only). That gives allowances
+  of 0.136 / 0.1375 for walls, 0.036 / 0.0375 for floors and ceilings and 0.0075 for roofs. NREL does not say
+  where these framing factors come from; they match commonly used values but are not tied to a published
+  survey here [CONFIRM].
+- Between 16 and 24 in the allowance is interpolated, outside that range the nearest value is held, and the roof
+  allowance is the same at every spacing. Those are RightTon's choices, not the source's [CONFIRM].
+- The user can override the allowance (`framing.allowance_frac`) or the whole share (`framing_frac`).

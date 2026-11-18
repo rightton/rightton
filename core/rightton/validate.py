@@ -320,6 +320,26 @@ def check_meaning(house: dict) -> list[Issue]:
                 error(where, str(e))
             except (KeyError, TypeError, ValueError):
                 pass  # already reported by the schema check
+        if a.get("framing") and has_layers:
+            try:
+                share = housefile.assembly_framing(a)
+            except HouseFileError as e:
+                error(f"{where} > framing", str(e))
+                share = None
+            if share is not None:
+                for first, last, depth_in in housefile.framed_cavities(a):
+                    span = f"layers {first + 1} to {last + 1}" if last > first else f"layer {first + 1}"
+                    if depth_in > share.depth_in + 0.01:
+                        error(where, f"the framed {span} add up to {depth_in:g} in, more than the {share.depth_in:g} in "
+                                     "cavity of the framing. Make the fills thinner or the framing deeper.")
+                    elif depth_in < share.depth_in - 0.01:
+                        warn(where, f"the framed {span} add up to {depth_in:g} in, less than the {share.depth_in:g} in "
+                                    "cavity of the framing. Add a framed air_space_closed layer for the rest of the "
+                                    "depth, or check the thicknesses.")
+        if a.get("framing") and has_layers and not any(
+                l.get("framing_material") or l.get("framing_r_per_inch_hr_ft2_f_btu_in") is not None for l in a["layers"]):
+            warn(f"{where} > framing", "framing is given but no layer is framed, so it has no effect. Mark the cavity "
+                                       "layer with framing_material.")
 
     # Surfaces
     opening_area: dict[str, float] = {}

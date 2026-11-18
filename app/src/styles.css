@@ -140,6 +140,15 @@ details[open] > summary { margin-bottom: .6rem; }
 .layer-n { width: 1.5rem; height: 1.5rem; border-radius: 50%; background: var(--brand-soft); color: var(--brand); font-size: .78rem; font-weight: 700; display: grid; place-items: center; }
 .layer-r { font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; } .layer-btns { display: flex; }
 .layer-fields { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: .5rem; margin-top: .5rem; align-items: end; }
+.framing-panel { margin-top: .9rem; border: 1px solid var(--line); border-radius: 9px; padding: .6rem .8rem; }
+.framing-panel h4 { margin: 0 0 .4rem; font-size: .95rem; }
+.framing-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: .5rem; }
+.framing-fields label, .framing-panel .override { font-size: .76rem; color: var(--muted); display: grid; gap: .15rem; }
+.framing-panel .override { margin-top: .5rem; max-width: 16rem; }
+.framing-sum { width: 100%; border-collapse: collapse; margin-top: .5rem; font-size: .88rem; }
+.framing-sum th { text-align: left; font-weight: 450; padding: .25rem 0; } .framing-sum td { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; padding-left: .5rem; }
+.framing-sum tr.total th, .framing-sum tr.total td { font-weight: 700; border-top: 1px solid var(--line); }
+.framing-sum input.pct { width: 4.5rem; text-align: right; margin-right: .2rem; }
 .cavity-head { border: 1px dashed var(--line-strong); border-radius: 9px 9px 0 0; padding: .5rem .7rem; margin-bottom: -.5rem; background: var(--brand-soft); }
 .cavity-row { display: flex; flex-wrap: wrap; gap: .4rem .8rem; align-items: end; } .cavity-row strong { align-self: center; margin-right: auto; }
 .cavity-row label { font-size: .76rem; color: var(--muted); display: grid; gap: .15rem; } .cavity-row input { width: 6rem; }

@@ -91,7 +91,13 @@ export function App() {
   };
   const save = () => {
     const name = doc.fileName || `${slug(projectName || "house")}.rtn.json`;
-    const blob = new Blob([JSON.stringify(house, null, 2) + "\n"], { type: "application/json" });
+    // A file saved by this app is written in the app's format version (same major version only: an older
+    // 1.x file is also a valid file of the current 1.x version).
+    const out: Obj = { ...house };
+    const [ma, mi] = String(out.format_version ?? "").split(".").map(Number);
+    const [cma, cmi] = (lib?.format_version ?? "").split(".").map(Number);
+    if (lib && ma === cma && mi < cmi) out.format_version = lib.format_version;
+    const blob = new Blob([JSON.stringify(out, null, 2) + "\n"], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob); a.download = name.endsWith(".rtn.json") ? name : name.replace(/(\.json)?$/, ".rtn.json");
     a.click(); URL.revokeObjectURL(a.href); doc.markSaved();
@@ -233,15 +239,14 @@ function Editors({ page, ctx, lib, out, sub, setSub, doc, pickEpw, go }: {
       intro: "Wall, roof, ceiling and floor constructions. Define each once, layer by layer, and use it on any number of surfaces.",
       summary: (a) => `${pretty((a.type as string) ?? "")} · ${Array.isArray(a.layers) ? `${a.layers.length} layer(s)` : num(a.r_value_hr_ft2_f_btu) !== undefined ? `R-${num(a.r_value_hr_ft2_f_btu)}` : "no R-value yet"} · used by ${list(house, ["surfaces"]).filter((s) => s.assembly === a.id).length}`,
       primary: ["type"],
-      hide: (a) => ["r_value_hr_ft2_f_btu", "framing_frac", ...(a.type === "wall" ? [] : ["construction", "cladding", "solar_absorptance_frac"]),
+      hide: (a) => ["r_value_hr_ft2_f_btu", "framing_frac", "framing", ...(a.type === "wall" ? [] : ["construction", "cladding", "solar_absorptance_frac"]),
         ...(a.type === "roof" ? [] : ["roofing", "roof_color", "radiant_barrier"])],
       newItem: (_t, id) => ({ id, name: "New assembly", type: "wall", layers: [] }),
       extra: (a, setA) => (<>
         {!Array.isArray(a.layers) && <div className="fields"><Field name="r_value_hr_ft2_f_btu" schema={itemSchema(root.properties!.assemblies).properties!.r_value_hr_ft2_f_btu} value={a.r_value_hr_ft2_f_btu} ctx={ctx} owner={a} required
           onChange={(v) => { const n = { ...a }; if (v === undefined) delete n.r_value_hr_ft2_f_btu; else n.r_value_hr_ft2_f_btu = v; setA(n); }} /></div>}
         <LayerBuilder assembly={a} setAssembly={setA} lib={lib} />
-        {Array.isArray(a.layers) && <div className="fields framing"><Field name="framing_frac" schema={itemSchema(root.properties!.assemblies).properties!.framing_frac} value={a.framing_frac} ctx={ctx} owner={a}
-          onChange={(v) => { const n = { ...a }; if (v === undefined) delete n.framing_frac; else n.framing_frac = v; setA(n); }} /></div>}</>) });
+        </>) });
   }
 
   if (page === "surfaces") {

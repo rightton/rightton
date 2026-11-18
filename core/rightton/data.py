@@ -46,6 +46,11 @@ def materials_by_category() -> list[tuple[str, str, list[dict]]]:
     return [(cid, cname, [m for m in mats if m["category"] == cid]) for cid, cname in material_categories().items()]
 
 
+def framing() -> dict:
+    """Lumber sizes and typical framing factors (data/framing.json)."""
+    return _load("framing.json")
+
+
 def glazing() -> dict[str, dict]:
     return {g["id"]: g for g in _load("glazing.json")["glazing"]}
 
