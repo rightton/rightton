@@ -78,3 +78,14 @@ def test_mineral_wool_in_a_2x8_rafter_bay_hand_calc():
     # U = 0.10 / 11.10475 + 0.90 / 32.4995 = 0.0090052 + 0.0276927 = 0.0366979 -> R 27.250
     asm = _framed("mineral_wool_batt", CAVITY_2X8_IN, "roof", 0.10)
     assert housefile.assembly_r_value(asm, "roof", True, roof_pitch_rise_per_12=0) == approx(27.2495, rel=2e-4)
+
+
+def test_mineral_wool_board_is_a_rigid_board():
+    m = data.materials()["mineral_wool_board"]
+    assert m["category"] == "rigid_boards" and "continuous" in m["use"]
+    # 1.5 in board at R-4.2 per inch = R-6.3, the same as a 1.5 in layer in an assembly
+    asm = {"id": "ci", "type": "wall", "layers": [{"material": "mineral_wool_board", "thickness_in": 1.5}]}
+    built = housefile.assembly_for_surface(asm, "wall", True)
+    assert built.layers[0].cavity_r == approx(6.3)
+    # Unconfirmed source: flagged so the app warns
+    assert m["confidence"] == "estimated" and "[CONFIRM]" in m["source"]

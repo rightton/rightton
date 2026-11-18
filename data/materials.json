@@ -201,6 +201,17 @@
    "note": "Foil-faced boards are usually rated R-6 to R-6.5 per inch: enter the rated R-value when known."
   },
   {
+   "id": "mineral_wool_board",
+   "name": "Mineral wool board (rigid, stone wool)",
+   "category": "rigid_boards",
+   "r_per_inch_hr_ft2_f_btu_in": 4.2,
+   "typical_thickness_in": 1.5,
+   "use": "continuous insulation",
+   "source": "[CONFIRM] Manufacturer data sheets for rigid stone wool boards sold as exterior continuous insulation list R-4.2 to R-4.3 per inch (ASTM C518, 75 F mean temperature); e.g. Owens Corning Thermafiber RainBarrier data sheet (siplast.com document siplast-thermafiber-rainbarrier-cpds-siplic018) and ROCKWOOL Comfortboard 80. The lower figure is used. Seen in a web search summary on 2026-11-18; the data sheets themselves could not be opened from the build environment.",
+   "confidence": "estimated",
+   "note": "Rated R per inch varies with board density; enter the rated value from the product label if you have it."
+  },
+  {
    "id": "wood_siding",
    "name": "Wood siding or clapboard",
    "category": "cladding",

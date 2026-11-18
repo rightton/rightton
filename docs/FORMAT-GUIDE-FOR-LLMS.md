@@ -244,6 +244,7 @@ Any material can go in any layer; any insulation can fill any framed cavity.
 | `xps_board` | Rigid boards | Extruded polystyrene (XPS) board | 5.0 |  |  |
 | `eps_board` | Rigid boards | Expanded polystyrene (EPS) board | 3.9 |  |  |
 | `polyiso_board` | Rigid boards | Polyisocyanurate board | 5.9 |  |  |
+| `mineral_wool_board` | Rigid boards | Mineral wool board (rigid, stone wool) | 4.2 |  | 1.5 |
 | `straw_bale` | Straw and other natural fiber | Straw bale | 2.4 |  |  |
 | `brick` | Masonry and concrete | Brick | 0.182 |  | 4.0 |
 | `stone` | Masonry and concrete | Stone | 0.08 |  | 1.0 |
